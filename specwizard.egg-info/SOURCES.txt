@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+specwizard/__init__.py
+specwizard/specwizard.py
+specwizard.egg-info/PKG-INFO
+specwizard.egg-info/SOURCES.txt
+specwizard.egg-info/dependency_links.txt
+specwizard.egg-info/requires.txt
+specwizard.egg-info/top_level.txt

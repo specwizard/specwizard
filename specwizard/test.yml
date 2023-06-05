@@ -1,0 +1,65 @@
+# Yalm Ain't Markup Language
+# Paramter file for specwizard
+
+directories:
+    ibdir: /cosma5/data/dp004/dc-wije1/bertone_tables/ionbal/
+    snapshot:
+        datadir: /cosma6/data/dp004/dc-aram1/VariableIMF/patchrea/12dat/snapshot_028_z000p000/
+        snap_base: part_los_z0.010
+    outputdir: ./los
+    sdasd: ['simx','simy','simz']
+
+los_options:
+    los_file:
+        use_los_file: True
+        file_list: file_short
+    read_snapshot:
+        use_snapshot_file: False        
+        read_eagle: False
+    NoPecVel: False
+    do_long_spectrum: False
+    nlyman: True
+    kernel:
+        integrate_kernel: False
+        kernel_type:
+            use_gaussian_kernel: False
+            use_cubic_spline: True
+
+simulation_type:
+    COLIBRE: False
+    EAGLE: True
+
+ion_parameters:
+    ions_to_do:
+        doH1: True
+        doHe2: False
+        doC2: False
+        doC3: False
+        doC4: False
+        doN2: False
+        doN3: False
+        doN4: False
+        doN5: False
+        doO1: False
+        doO3: False
+        doO4: False
+        doO5: False
+        doO6: False
+        doO7: False
+        doMg2: False
+        doNe8: False
+        doAl2: False
+        doAl3: False
+        doSi2: False
+        doSi3: False
+        doSi4: False
+        doS5: False
+        doFe2: False
+        doFe3: False
+        do21cm: False
+        doall: False
+    ibfactor: 1
+    use_maxdens_above_zmax: True
+    use_fitted_ibfactor: False
+        
+

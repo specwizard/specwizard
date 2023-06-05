@@ -1,0 +1,43 @@
+# Yalm Ain't Markup Language
+# Paramter file for specwizard
+
+
+file_type:
+    
+    sim_type:
+    snap_type:
+    
+snapshot_params:
+    
+    directory:
+    file:
+
+sightline:
+    ProjectionAxes: ['simx','simy','simx']
+    x-axis: 0
+    y-axis: 1
+    z-axis: 2
+    ProjectionStart: 0
+    x-position: 0.5
+    y-position: 0.5
+    z-position: 0
+    ProjectionLength: 1
+    nsight: 0 
+    
+ionparams:
+    table_type: specwizard_cloudy
+    iondir: 
+    fname:
+    ions: !!python/tuple [Hydrogen, H I]
+    SFR_properties:
+        modify_particle: True
+        ignore_particle: False
+        Temperature [K]: 1.0e4
+    atomfile: ./VpFits/atom.data
+    
+ODParams:
+    VelOffset_kms: 0
+    PecVelEffectsOff: False
+    ThermalEffectsOff: False
+    VoigtOff: False
+    

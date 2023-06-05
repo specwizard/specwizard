@@ -1,3 +1,13 @@
 /dist/
 /*.egg-info
 /.eggs
+*.pyc
+/specwizard/Analisis/
+/specwizard/data/
+/specwizard/__pycache__/
+/specwizard/*.ipynb
+/specwizard/*.pdf
+/specwizard/*.png
+/specwizard/*.hdf5
+/specwizard/*.h5
+/specwizard/*.txt

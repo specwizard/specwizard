@@ -1,10 +1,10 @@
 
 def get_simkeys(sim_name='eagle'):
                 
-    elementnames_eagle = ['Hydrogen', 'Helium', 'Nitrogen', 'Carbon', 'Oxygen', 'Magnesium', 'Silicon',                             'Iron']
-    elementnames_hydra = ['Hydrogen', 'Helium', 'Nitrogen', 'Carbon', 'Oxygen', 'Magnesium', 'Silicon',                             'Iron']
-
-    elementnames_swift = ['Hydrogen', 'Helium','Carbon','Nitrogen','Oxygen','Neon','Magnesium',                                     'Silicon','Iron','Europium']
+    elementnames_eagle = ['Hydrogen', 'Helium', 'Nitrogen', 'Carbon', 'Oxygen', 'Magnesium', 'Silicon','Iron']
+    elementnames_hydra = ['Hydrogen', 'Helium', 'Nitrogen', 'Carbon', 'Oxygen', 'Magnesium', 'Silicon','Iron']
+    elementnames_swift = ['Hydrogen', 'Helium','Carbon','Nitrogen','Oxygen','Neon','Magnesium','Silicon','Iron','Europium']
+    elementnames_TNG   = ['Hydrogen', 'Helium','Carbon','Nitrogen','Oxygen','Neon','Magnesium','Silicon','Iron']
     sym_keys = {}
     sym_keys['eagle'] = {}
     sym_keys['eagle']['los'] ={'elementnames'           : elementnames_eagle,
@@ -117,6 +117,23 @@ def get_simkeys(sim_name='eagle'):
                                'Metallicities'          : 'metal_mass_fractions',
                                'StarFormationRate'      : 'star_formation_rates',
                                'IonFractions'           : 'SpeciesFractions'}
+    
+
+    sym_keys['illustris'] = {}
+    sym_keys['illustris']['snapshot'] = {'elementnames' : elementnames_TNG,
+                               'groupname'              : 'PartType0',
+                               'ElementAbundance'       : 'GFM_Metals',
+                               'Densities'              : 'Density',
+                               'Masses'                 : 'Masses',
+                               'Positions'              : 'Coordinates',
+                               'Velocities'             : 'Velocities',
+                               'InternalEnergy'         : 'InternalEnergy',
+                               'ElectronAbundance'      : 'ElectronAbundance',
+                               'Metallicities'          : 'GFM_Metallicity',
+                               'IonFractions'           : 'SpeciesFractions',
+                               'NeutralHydrogenAbundance': 'NeutralHydrogenAbundance'}
+
+
     return sym_keys[sim_name]
 
     

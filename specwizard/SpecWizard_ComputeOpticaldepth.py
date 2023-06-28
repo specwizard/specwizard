@@ -1,5 +1,9 @@
+import importlib
 import numpy as np
 from SpecWizard_Elements import Elements
+import SpecWizard_Lines
+
+SpecWizard_Lines = importlib.reload(SpecWizard_Lines)
 from SpecWizard_Lines import Lines
 import Phys
 constants = Phys.ReadPhys()
@@ -56,9 +60,32 @@ class ComputeOpticaldepth:
         npix    = len(vel_kms)
         #
         
-        sightparams = [sight_kms,vel_kms,pixel_kms,pixel] 
+        sightparams = {}
+        sightparams['sight_kms'] = sight_kms
+        sightparams['vel_kms']   = vel_kms
+        sightparams['pixel_kms'] = pixel_kms
+        sightparams['pixel']     = pixel
+             
         Ions        = self.specparams["ionparams"]["Ions"]
-        projectionIW   = projection["Projection"]["Ion-weighted"]
+        projectionIW  = projection["Projection"]["Ion-weighted"]
+        
+        extend      = self.specparams['sightline']['ProjectionExtend']
+        if extend["extend"]:
+            extended_factor  = extend["extendfactor"]
+            extended_npix    = npix * extended_factor
+            extended_vel_kms = np.arange(extended_npix) * pixel_kms
+            start_indx       =  int(0.5 * npix * (extended_factor - 1))
+            for ion in projectionIW.keys():
+                for key in ['Densities', 'Velocities', 'Temperatures']:
+                    temp_array               = np.zeros_like(extended_vel_kms)
+                    #nnpix = len(projectionIW[ion][key]['Value'])
+                    
+                    temp_array[start_indx:start_indx+npix]  = projectionIW[ion][key]['Value']
+                    projectionIW[ion][key]['Value'] = temp_array
+            sightparams['vel_kms']   = extended_vel_kms
+            sightparams['sight_kms'] = extended_vel_kms.max()
+                        
+                    
         spectra  = self.WrapSpectra(Ions,projectionIW,sightparams,vel_mod=False,therm_mod=False)
         #return spectra
         if self.ThermEff:
@@ -103,7 +130,7 @@ class ComputeOpticaldepth:
     def WrapSpectra(self,Ions,projection,sightparams,vel_mod=False,therm_mod=False ):
         header     = self.header
         spectra    = {}
-        vel_kms    = sightparams[1]
+        vel_kms    = sightparams['vel_kms']
         vunit   = self.SetUnit(vardescription='Hubble velocity',
                                Lunit=1e5, aFact=0, hFact=0)
         for ion in Ions:
@@ -143,7 +170,10 @@ class ComputeOpticaldepth:
 
         ''' Compute optical depth for a given transition, given the ionic density, temperature and peculiar velocity '''
 
-        box_kms, vel_kms, pixel_kms,pixel = sightparams
+        box_kms    = sightparams['sight_kms']
+        vel_kms    = sightparams['vel_kms']
+        pixel_kms  = sightparams['pixel_kms']
+        pixel      = sightparams['pixel']
         npix         = len(vel_kms)
         tau          = np.zeros_like(vel_kms)
         densities    = np.zeros_like(vel_kms)
@@ -171,23 +201,31 @@ class ComputeOpticaldepth:
         voffset_kms    = self.specparams['ODParams']['Veloffset']  #Default = 0 
         vions_tot_kms  = vions_kms + vHubble_kms + voffset_kms
         
-
-        for (ioncolumn, bion_kms, vion_tot_kms, vion_kms, Tion) in zip(ioncolumns, bions_kms, vions_tot_kms, vions_kms, Tions):
-            if ioncolumn > 0:
-                dtau          = ioncolumn * lines.sigma * lines.UniversalErf(b_kms=bion_kms, v0_kms=vion_tot_kms)
-                tau          += dtau
-                densities    += dtau * ioncolumn
-                velocities   += dtau * vion_kms
-                temperatures += dtau * Tion
+        spectrum = lines.gaussian(column_densities = ioncolumns, b_kms = bions_kms ,vion_kms=vions_tot_kms,Tions= Tions)
+        # for (ioncolumn, bion_kms, vion_tot_kms, vion_kms, Tion) in zip(ioncolumns, bions_kms, vions_tot_kms, vions_kms, Tions):
+        #     if ioncolumn > 0:
+        #         dtau          = ioncolumn * lines.sigma * lines.UniversalErf(b_kms=bion_kms, v0_kms=vion_tot_kms)
+        #         tau          += dtau
+        #         densities    += dtau * ioncolumn
+        #         velocities   += dtau * vion_kms
+        #         temperatures += dtau * Tion
+        tau        = spectrum['optical_depth']
+        densities  = spectrum['optical_depth_densities']
+        velocities = spectrum['optical_depth_velocities']
+        temperatures = spectrum['optical_depth_temperatures']
+        pixel_velocities = spectrum['pixel_velocity_kms']
+        
+        print("Sum column: ", total_column_density['Value'])
+        print("Column from tau", spectrum['total_column_density'])
 
         # optical depth-weighted quantities
         if (not self.VoigtOff) and (element_name=="Hydrogen"):
-            tau = lines.ConvolveLorentz(tau)
-        mask                = tau > 0
-        densities[mask]    /= tau[mask]
-        densities          /= pixel
-        velocities[mask]   /= tau[mask]
-        temperatures[mask] /= tau[mask]
+            tau = lines.convolvelorentz(tau)
+        # mask                = tau > 0
+        # densities[mask]    /= tau[mask]
+        # densities          /= pixel
+        # velocities[mask]   /= tau[mask]
+        # temperatures[mask] /= tau[mask]
 
         #
         dunit        = self.SetUnit(vardescription="Tau weighted ion mass density", 
@@ -231,6 +269,3 @@ class ComputeOpticaldepth:
 
     def SetUnit(self, vardescription = 'text describing variable', Lunit=constants['Mpc'], aFact=1.0, hFact=1.0):
         return {'VarDescription': vardescription, 'CGSConversionFactor':Lunit, 'aexp-scale-exponent' :aFact, 'h-scale-exponent': hFact}
-
-            
-            

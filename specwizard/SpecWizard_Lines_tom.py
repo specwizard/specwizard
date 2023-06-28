@@ -121,6 +121,7 @@ class Lines:
             temperatures = temperatures[nint:2*nint]            
         mask = tau > 0 
         #Normalize optical depth quantities 
+        print(tau)
         densities[mask]     /=  tau[mask]
         velocities[mask]    /=  tau[mask]
         temperatures[mask]  /=  tau[mask]

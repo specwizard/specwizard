@@ -2,7 +2,7 @@
 import numpy as np
 import scipy.interpolate as interpolate
 #
-from SpecWizard_Input import ReadSnap
+from SpecWizard_Input import ReadData
 from SpecWizard_Elements import Elements
 from SpecWizard_IonizationBalance import IonizationBalance
 from SpecWizard_SplineInterpolation import ColumnTable

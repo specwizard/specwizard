@@ -17,7 +17,7 @@ class Build_Input:
     
     def __init__(self):
     
-        self.sym_types  = ['eagle','swift','hydrangea','colibre']
+        self.sym_types  = ['eagle','swift','hydrangea','colibre','illustries']
         self.snap_types = ["snapshot","los"]
         
         self.specparams = {}
@@ -88,7 +88,7 @@ class Build_Input:
     ProjectionAxes   = (Projx,Projy,Projz) = ('simy','simz','simx')
     ProjectionStart  = (0.1 , 0.5, 0 )
     ProjectionLength = 1
-    def Sightline(self,nsight  = None, ProjectionAxes = None ,ProjectionStart = None, ProjectionLength=None,SightLength=None):
+    def Sightline(self,nsight  = None, ProjectionAxes = None ,ProjectionStart = None, ProjectionLength=None,SightLength=None,ProjectionExtend=None,):
 
         '''
         This generate the sightline characteristics:
@@ -124,6 +124,7 @@ class Build_Input:
                      'z-position' :zpos,
                      'ProjectionLength': ProjectionLength,
                      'SightLength':SightLength,
+                     'ProjectionExtend':ProjectionExtend,
                      'nsight':     nsight}
         
         if self.specparams['file_type']['snap_type'] == 'snapshot':
@@ -138,6 +139,7 @@ class Build_Input:
                      'z-position' :0,
                      'ProjectionLength': 1,
                      'SightLength':1,
+                     'ProjectionExtend': {"extend":False,"extendfactor":3},
                      'nsight':     0}
                         
             default_keys = sightline_default.keys()
@@ -214,7 +216,12 @@ class Build_Input:
         transitionparams = {}
 
         self.specparams["ionparams"]['IonizationBalance'] = IonTables(specparams  = self.specparams)
-                
+
+        #We always need hydrogen to be read since the ion fractions are calculated based on the hydrogen density 
+        elements_check = [ions[i][0] for i in range(len(ions))]
+        if "Hydrogen" not in elements_check:
+            ions.insert(0,('Hydrogen','H I'))    
+        
         for element, ion in ions:
             pars = elements.ElementParameters(ElementNames=[element])
             transitionparams[ion] = {}

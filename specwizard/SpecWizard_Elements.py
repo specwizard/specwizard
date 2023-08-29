@@ -9,13 +9,17 @@ from collections import OrderedDict
 
 ElementNames = ['Hydrogen', 'Helium', 'Carbon', 'Oxygen', 'Silicon', 'Iron']
 class Elements:
-    ''' 
+    """
+	This class sets the physical parameters for the desired chemical elements that are needed\
+        to be able to compute the properties of its absorption lines"
         This class reads properties of transitions from the atom.dat file that comes with VpFit.
-        Input:
-           ElementNames: list of elements whose proerties we want to read, for example
-               ElementNames = ['Hydrogen', 'Helium']
-           atomfile = atome.dat file that comes with VpFit
-    '''
+        
+        Parameters
+        ----------    
+    
+           atomfile  : str
+                File that comes with VpFit with atomic data. (default = 'atome.dat')
+    """
     
     def __init__(self, 
                  atomfile="/cosma/home/dphlss/tt/atom.dat"):
@@ -34,14 +38,16 @@ class Elements:
         to be able to compute the properties of its absorption lines")
         
     def ElementParameters(self, ElementNames=ElementNames):
-        ''' For all desired element, read desired values from atom.dat
+        """ 
+	For all desired element, read desired values from atom.dat
          The structure returned is of the form
         (Name, atomic weight, (ionization states))
         Name is the name of the element, e.g. Hydrogen
         atomic weight is the mass of the element in amu (isotopes are not accounted for)
         (ionization stages) is a tuple, containing the considered ionisation states, e.g. (0) for HI, or (0,1) for HeI and HeII
         lines: for each ionization stage, a list of tuples, containing wavelength in Angstrom, and f-value
-               these are read from Vpfit's "atom.dat"'''
+               these are read from Vpfit's "atom.dat"
+        """
         
         elementnames = ElementNames
         Parameters   = {}

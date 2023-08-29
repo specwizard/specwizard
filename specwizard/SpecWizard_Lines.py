@@ -29,8 +29,8 @@ class Lines:
         self.npix         = len(self.v_kms)
         self.lambda0      = lambda0_AA * 1e-8  # rest-wavelength           [cm]
         self.f_value      = f_value            # oscillator strength       [dimensionless]
-        self.naturalwidth = naturalwidth_kms   # natural line width        [km/s]
-        
+        self.naturalwidth = naturalwidth_kms   # natural line width        [km/s]self.
+        self.sigma        = self.constants["c"] * np.sqrt(3*np.pi*self.constants["sigmaT"]/8.) * self.f_value * self.lambda0
     def errfunc(self):
         # tabulated error function
         pix     = 1e-2
@@ -74,7 +74,7 @@ class Lines:
         periodic     = self.periodic
 
         # line cross section times speed of light, c [cm^2 * cm/s]
-        sigma        = self.constants["c"] * np.sqrt(3*np.pi*self.constants["sigmaT"]/8.) * f_value * lambda0
+        sigma        = self.sigma
         
         # generate normalized error function
         verf, erf = self.errfunc()
@@ -242,4 +242,61 @@ class Lines:
             velocity_kms = velocity_kms[nint:2*nint]
         
         return velocity_kms, phi/1e5  # convert to units of [s/cm]
+    
+    
+    
+    
+    def sigmaHI(self,hnu_eV=13.6):
+        ''' Fit from Verner et al ('96) fit to the photo-ionization cross section
+        Input: energy of the photon in eV
+        Output: photo-ionization cross section in cm^2 '''
+
+        barn   = 1e-24
+        sigma0 = 5.475e4 * 1e6 * barn
+        E0     = 0.4298
+        xa     = 32.88
+        P      = 2.963
+        #
+        energy = np.array(hnu_eV)
+        x      = energy/E0
+        sigma  = sigma0 * (x-1)**2 * x**(0.5*P-5.5) * (1.+np.sqrt(x/xa))**(-P)
+        if isinstance(sigma, (list, tuple, np.ndarray)):
+            mask        = energy < 13.6
+            sigma[mask] = 0
+        else:
+            if energy < 13.6:
+                sigma = 0.0    
+        return sigma
+
+    def convolveLymanLimit(self,tau_Lymanalpha):
+        ''' Return Lyman limit optical depth corresponding to input Lyman-alpha optical depth '''
+        vel_kms    = self.v_kms           # pixel velocities [km/s]
+        pix_kms    = self.pix_kms    # pixel width [km/s]
+        npix       = self.npix       # number of pixels
+        constants  = self.constants
+        lambda0    = 1215.67e-8      # Lya wavelength [cm]
+        f_value    = 0.4164          # Lya f-value
+
+        # compute Lya cross section [cm^2 km/s]
+        sigma_a    = np.sqrt(3*np.pi*constants["sigmaT"]/8.) * f_value * lambda0 * (constants["c"]) / 1e5
+
+        # generate velocity grid for convolution
+
+        # use finer pixels
+        pix     = 0.1 # pixel size in km/s
+        npix    = int(np.max(vel_kms) / pix)
+        pix     = np.max(vel_kms) / npix
+        vel     = np.arange(-npix, npix) * pix
+        tau     = np.interp(vel, vel_kms, tau_Lymanalpha)
+        #hnu_eV  = 13.6 * (1. - vel * 1e5 / constants["c"])
+        hnu_eV  = 13.6 * np.exp(-((vel*1e5)/constants["c"]))
+        sigma   = self.sigmaHI(hnu_eV=hnu_eV)
+        tau_LL  = convolve(tau/sigma_a, sigma, mode='same')
+        tau_LL *= pix
+
+        #
+        result  = np.interp(vel_kms, vel, tau_LL)
+
+        #
+        return result    
         

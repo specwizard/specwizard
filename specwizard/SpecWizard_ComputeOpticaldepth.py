@@ -183,7 +183,7 @@ class ComputeOpticaldepth:
         
         # passing the extent of the box in km/s introduces periodic boundary conditions
         lines = Lines(v_kms = vel_kms, box_kms=box_kms, constants = self.constants, verbose=False, 
-                 lambda0_AA=lambda0, f_value=f_value, naturalwidth_kms=-1,periodic=self.periodic)
+                 lambda0_AA=lambda0, f_value=f_value,periodic=self.periodic)
             
         # convert from density to column density
         ioncolumns = nions * pixel                                           # in ions/cm^2
@@ -202,31 +202,20 @@ class ComputeOpticaldepth:
         vions_tot_kms  = vions_kms + vHubble_kms + voffset_kms
         
         spectrum = lines.gaussian(column_densities = ioncolumns, b_kms = bions_kms ,vion_kms=vions_tot_kms,Tions= Tions)
-        # for (ioncolumn, bion_kms, vion_tot_kms, vion_kms, Tion) in zip(ioncolumns, bions_kms, vions_tot_kms, vions_kms, Tions):
-        #     if ioncolumn > 0:
-        #         dtau          = ioncolumn * lines.sigma * lines.UniversalErf(b_kms=bion_kms, v0_kms=vion_tot_kms)
-        #         tau          += dtau
-        #         densities    += dtau * ioncolumn
-        #         velocities   += dtau * vion_kms
-        #         temperatures += dtau * Tion
+
         tau        = spectrum['optical_depth']
         densities  = spectrum['optical_depth_densities']
         velocities = spectrum['optical_depth_velocities']
         temperatures = spectrum['optical_depth_temperatures']
         pixel_velocities = spectrum['pixel_velocity_kms']
         
-        print("Sum column: ", total_column_density['Value'])
-        print("Column from tau", spectrum['total_column_density'])
+#        print("Sum column: ", total_column_density['Value'])
+#        print("Column from tau", spectrum['total_column_density'])
 
         # optical depth-weighted quantities
         if (not self.VoigtOff) and (element_name=="Hydrogen"):
+#            print("this is happening")
             tau = lines.convolvelorentz(tau)
-        # mask                = tau > 0
-        # densities[mask]    /= tau[mask]
-        # densities          /= pixel
-        # velocities[mask]   /= tau[mask]
-        # temperatures[mask] /= tau[mask]
-
         #
         dunit        = self.SetUnit(vardescription="Tau weighted ion mass density", 
                                              Lunit=1.0, aFact=0.0, hFact=0.0)

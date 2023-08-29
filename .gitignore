@@ -6,8 +6,13 @@
 /specwizard/data/
 /specwizard/__pycache__/
 /specwizard/*.ipynb
+!/specwizard/Galaxy_metals-example.ipynb
 /specwizard/*.pdf
 /specwizard/*.png
 /specwizard/*.hdf5
 /specwizard/*.h5
 /specwizard/*.txt
+/specwizard/*_old.py
+/specwizard/*_test.py
+/specwizard/*_alotoffunctions.py
+

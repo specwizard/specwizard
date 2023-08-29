@@ -4,40 +4,49 @@
 
 file_type:
     
-    sim_type:
-    snap_type:
+    sim_type: eagle
+    snap_type: snapshot
     
 snapshot_params:
     
-    directory:
-    file:
+    directory: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/snapshot_019_z001p004
+    file: snap_019_z001p004.0.hdf5
 
 sightline:
-    ProjectionAxes: ['simx','simy','simx']
-    x-axis: 0
-    y-axis: 1
-    z-axis: 2
-    ProjectionStart: 0
-    x-position: 0.5
-    y-position: 0.5
-    z-position: 0
+    ProjectionAxes: ['simx','simy','simz']
+    ProjectionStart: [0.5,0.5,0]
     ProjectionLength: 1
-    nsight: 0 
+    SightLength: null
+    ProjectionExtend:
+        extend: False
+        extendfactor: 3
+    nsight: 0
     
 ionparams:
     table_type: specwizard_cloudy
-    iondir: 
-    fname:
-    ions: !!python/tuple [Hydrogen, H I]
+    iondir: /cosma7/data/Eagle/SpecWizardCloudytables/HM12/
+    fname: null
+    ions: [['Hydrogen', 'H I']]
     SFR_properties:
         modify_particle: True
         ignore_particle: False
-        Temperature [K]: 1.0e4
-    atomfile: ./VpFits/atom.data
+        Temperature [K]: 1.0E+4    # Putting the plus sign between E and the number is important to not be processed as a string. 
+    atomfile: ./VpFit/atom.dat
     
 ODParams:
     VelOffset_kms: 0
     PecVelEffectsOff: False
     ThermalEffectsOff: False
     VoigtOff: False
+    
+
+LongSpectra:
+    lambda_min: 945.0
+    lambda_max: 8000.0
+    dlambda: 0.5
+    z_qsr: 3.0
+    delta_z: 0.1
+    file_dir: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/los/ #./Analisis/long_los/ #
+
+
     

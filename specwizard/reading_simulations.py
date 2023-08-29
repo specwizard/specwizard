@@ -18,7 +18,11 @@ class InputFunctions:
         '''
         This class containes a set of functions that are commonly shared among the different classes that read the data from simulations.
         
-        input: Wizard, the dictionary created by SpecWizard_BuildInput
+        Parameters
+        ----------
+        
+        fileparams: dictionary
+        The Wizard dictionary created by SpecWizard_BuildInput
         '''
         
     
@@ -39,6 +43,22 @@ class InputFunctions:
             self.header = header
         
     def read_group(self, groupname ='Header'):
+        """
+        Read the attributes of a specific hdf5 data group
+        
+        Parameters
+        ----------
+        
+        groupname : str
+        Name of the data group to read attributes.
+        
+        
+        Returns
+        -------
+        
+        out : dictionary 
+        Dictionary with the name (key) and value of the attribute. 
+        """
     # read all entries for this particular hdf5 group
         hfile = h5py.File(self.fname, "r")
         group    = hfile[groupname]
@@ -51,32 +71,83 @@ class InputFunctions:
         return dict(grp_dict)
     
     def set_unit(self, vardescription = 'text describing variable', Lunit=constants['Mpc'], aFact=1.0, hFact=1.0):
-        '''
-        "Formats the information for converting to CGS units" 
-        '''
+        """
+        Formats into a dictionary the information for converting to CGS units. Using the toCGS function.  
+        
+        Parameters
+        ----------
+        
+        vardescription : str
+        Description of the variable e.g Mass of the gas particle
+        
+        Lunit  : float 
+        Conversion factor to CGS.
+        
+        aFact : float
+        Exponent of the scale factor $a$ for conversion to physical units. 
+        
+        hFact : float
+        Exponent of the Hubble parameter $h=H/100$, some quantities in some simulations are divided by h. 
+        
+        Returns
+        -------
+        
+        out : dictionary
+        Formated dictionary with the necesary informations to conver to physical CGS units. 
+        """
         return {'VarDescription': vardescription, 'CGSConversionFactor':Lunit, 'aexp-scale-exponent' :aFact, 'h-scale-exponent': hFact}
 
     
     def Hubble(self):
-        ''' Hubble constant at redshift z, in units 1/s'''
+        """
+         Hubble constant at redshift z, in units 1/s
+        """
         Hz  = self.header["Cosmo"]["H0"]
         z   = self.header["Cosmo"]["Redshift"]
         Hz *= np.sqrt(self.header["Cosmo"]["OmegaMatter"] * (1.+z)**3 + self.header["Cosmo"]["OmegaLambda"])
         return Hz
     
     def FormatTxt(self,text):
-        '''
+        """
         Format text into lower case and eliminate spaces
-        '''
+        
+        Parameters
+        ----------
+        
+        text : str
+        
+        Returns
+        -------
+        
+        out : str
+        
+        Text formated with lower case and no white spaces
+        """
         return text.lower().replace(" ","")
     
     def set_sightlineparams(self,sightline,header):
-        '''
-        Adds to the Wizard['sightline'] dictionary extra information about of the sightline, specially if a LOS file is used. 
-        '''
+        """
+        Adds to the Wizard['sightline'] dictionary extra information about of the sightline, This is use specifically if a LOS file is used.
+        
+        Parameters
+        ----------
+        
+        sightline : dictionary 
+        sightline dictionary from the Wizard dictionary
+        
+        header    : dictionary 
+        Header read from the simulation data. 
+        
+        Returns
+        -------
+        
+        out : dictionary
+        Returns the updated sightline dictionary/
+        """
         
         self.header = header
         if self.snaptype == 'los':
+            # We read extra information about the sightline located in the data file. Such position of the sightline, orientation, boxsize ...
             groupdic     = self.groupdic
             groupname    = groupdic['groupname'].format(sightline['nsight'])
             sightline_s  = self.read_group(groupname = groupname)
@@ -107,6 +178,7 @@ class InputFunctions:
                 sightline['z-axis']     = zaxis[0]  
             sightline['short-LOS'] = False
             sightline['ProjectionLength'] = 1 
+            sightline['ProjectionExtend'] = {"extend":False,"extendfactor":1}
 
         # compute the velocity extent of the simulation volume in the sightline direction
         z_axis  = sightline["z-axis"]        
@@ -134,13 +206,50 @@ class InputFunctions:
         return sightline
         
     def BuildLOS(self,sightline,header):
-        '''
-        Build LOS from full snapshot, for eagle uses ReadEagle and for swift swiftsim io. We define a region and later an additional mask.
-        ouput: Will calculate self.snap and self.los_mask. The former contains a region defined by the simulation reading functions e,g ReadEagle.
-        and the latter is a more fine mask to only include particles that are within their smoothing length to sightline. 
-        '''
+        """
+        Build LOS from full simulation box. Takes the spatial information provided by the user during BuildInput, and shape it so it can be used by     ReadEagle, swiftsim io. This to build the desire sightline.  
+        
+        Parameters
+        ---------- 
+        
+        sightline : dictionary
+        sightline dictionary from Wizard['sightline'] 
+        
+        header    : dictionary 
+        Header read from the simulation data. 
+        
+        Returns
+        -------
+        (tuple): tuple containing:
+        
+            axis_dic (dictionary) Maps the user specified sightline axes to the simulation axes. 
+            xpos (float) x-position of the sightline in the same units of length from the simulation
+            ypos (float) y-position of the sightline in the same units of length from the simulation
+            zpos (float) z-position of the sightline in the same units of length from the simulation
+            los_length-(float) sightline length in the same units of length from the simulation.
+            msl_x3 (float) three times the mean separation length between the particles. 
+        
+        """
         
         def MeanSeparationLenght(N,V):
+            
+        """
+            We calculate the mean separation length to define the region that will be masked by the simulation reading function.
+            
+            Parameters
+            ----------
+            
+            V : float
+            Volume of the simulation
+            N : int
+            Total number of particles
+            
+            Returns
+            -------
+            
+            out : float 
+            Mean separation length. 
+        """
             ninv = V/N
             return pow(ninv,1/3)
                     
@@ -184,9 +293,29 @@ class InputFunctions:
     
     
     def ReadAndShapeIonFrac(self,read_variable,particles,groupname):
-        '''
-         Reads and formats the ion fraction information from simulations that have support.
-        '''
+        """
+        
+         Reads and formats the ion fraction information from simulations that have that information. Currently only supported by Colibre
+         
+         Parameters
+         ----------
+         
+         read_variable : function
+         Function that reads the particle data for the simulation. This is function is defined in SpecWizard_ReadData
+         
+         particles : dictionary
+         Particle dictionary containg all the other particle properties. This is for proper conversion of the ion fractions.
+         
+         groupname : str
+         Name of the hdf5 group in which the ion fractions are located. 
+         
+         Returns
+         -------
+         
+         out : dictionary
+         Formated dictionary with the ion fractions.
+         
+        """
         
         groupdic         = self.groupdic
         userions         = self.fileparams['ionparams']['Ions']
@@ -222,11 +351,34 @@ class InputFunctions:
         return IonFracs    
     
     def set_fractions_metallicity(self,read_variable,particles):
-        '''
-        Some simulations do not contain metallicity or element fraction. This fuction attempts to read the simulation data, if it fails it set some default values
-        Sets metallicities as zero 
-        Sets elemen fraction of hydrogen and helium to primordial values. 
-        '''
+        """
+        Reads the element fraction and metallicities of particles. The metallicy is used in some ionization tables (e.g Ploekinger)
+        
+        Since simulations do not contain metallicity or element fraction. This fuction attempts to read the simulation data, if it fails it set some default values
+        Sets metallicities to zero 
+        Sets elemen fraction of hydrogen and helium to primordial values.
+        
+        Parameters
+        ----------
+        
+        read_variable : function
+        Function that reads the particle data for the simulation. This is function is defined in SpecWizard_ReadData
+
+        particles : dictionary
+        Particle dictionary containg all the other particle properties. 
+        
+        
+        Returns
+        -------
+        
+        out : tuple containing:
+            element2do (list) : list of strings of the intersection between the user input elements and the elements available in the ionization table. 
+            abundances (dictionary) : formated dictionary with the available element abundances.
+            metallicity (dictionary) : formated dictionary with the particle metallicities. 
+            
+        
+        
+        """
         groupdic         = self.groupdic 
         groupname        = self.groupname
         elementnames     = groupdic['elementnames']
@@ -275,9 +427,25 @@ class InputFunctions:
 
     
     def flip_los(self,data,sightinfo):
-        '''
-        This function will put the long projected axis as the third column in the output.
-        '''
+        """
+        This function will put the long projected axis as the third column in the output. So the longest part of the sightline will always be at [:,2]
+        
+        Parameters
+        ----------
+        
+        data : array 
+        Data array contaning 3D data (e,g positions, velocities)
+        
+        sightinfo : dictionary
+        Dictionary with the sightline info this should be part of the Wizard dictionary from BuildInput
+        
+        Returns
+        -------
+        
+        out : array
+        Formated data array. With the modified axis. 
+        
+        """
         
         temp = data.copy()
         temp[:,0] = data[:,sightinfo['x-axis']]
@@ -288,21 +456,48 @@ class InputFunctions:
     
     
     def ToCGS(self, variable):
-        ''' 
-        return simulations values for this variable in proper cgs units (no h)
-        '''
+        """ 
+        Return simulations values for this variable in proper cgs units (no h)
+        
+        Parameters
+        ----------
+        
+        variable : dictionary 
+        Dictionary of attribute to be converted to CGS.
+        
+        Returns
+        -------
+        
+        out : array 
+        array of the CGS converted quantity. 
+        
+        """
         return variable["Value"] * self.CGSunit(variable)
     
     
     
     def CGSunit(self, variable):
-        ''' 
+        """ 
         Use the information in the variable to compute the factor needed to convert
         simulation values to proper, h-free cgs units.
-        This is of the form
+        This is of the form:
         proper value = simulation value * CGSunit, where
         CGSunit = CGSConversionFactor * h**hexpo * a**aexpo
-        '''
+        This is used by the ToCGS function. 
+        
+        Parameters
+        ----------
+        
+        variable : dictonary
+        Formated dictionary of the attribute we wish to covert to CGS.
+        
+        Returns
+        ------- 
+        
+        out : float
+        Conversion factor for physical CGS. 
+        
+        """
         #header     = self.read_group()
         #dependence on expansion factor
         ascale     = (1./(1+self.header["Cosmo"]["Redshift"]))**variable["Info"]["aexp-scale-exponent"]
@@ -315,9 +510,23 @@ class InputFunctions:
     
     
     def set_SFR(self,read_variable,groupname,particles):
-        '''
-        Attempts to read star formation rates, if not creates a zero array
-        '''
+        """
+        Attempts to read star formation rates, if not creates a zero array. For some users dealing with star forming particles in important and how to deal with them is part of BuildInput. 
+        
+        Parameters
+        ----------
+        
+        read_variable : function
+        Function that reads the particle data for the simulation. This is function is defined in SpecWizard_ReadData
+
+        particles : dictionary
+        Particle dictionary containg all the other particle properties. 
+
+        groupname : str
+        Name of the hdf5 group in which the SFR is located. 
+        
+        
+        """
         groupdic     = self.groupdic 
         particlesSFR = {}
         try:
@@ -341,10 +550,16 @@ class ReadEagle:
     
     def __init__(self,fileparams={}):
         
-        '''
+        """
         Class that contains functions to read particle data from the eagle simulation
-        Input: Wizard dictionary, the output from SpecWizard_BuildInput
-        '''
+        
+        Parameters
+        ----------
+        
+        
+        fileparams : dictionary
+        The Wizard dictionary, output from SpecWizard_BuildInput
+        """
         self.fileparams = fileparams
         self.fdir       = fileparams["snapshot_params"]["directory"]
         self.fname      = self.fdir + '/' + fileparams["snapshot_params"]["file"]
@@ -673,7 +888,8 @@ class ReadSwift:
             hfile  = h5py.File(self.fname, "r")
             values = np.array(hfile[varname][...])
             hfile.close()
-        
+            info_s  = self.inputfunc.read_group(groupname = varname)
+
         if self.snaptype =='snapshot':
             
             varname_frmtd = varname.split("/")
@@ -694,10 +910,10 @@ class ReadSwift:
                 values = (getattr(self.SW_snap.gas,swiftsimio_format).value)[self.los_mask]
                 info_s   = self.inputfunc.read_group(groupname = varname)
                 
-            info    = {'VarDescription': info_s['Description'] + info_s['Expression for physical CGS units'],
-                               'CGSConversionFactor': info_s['Conversion factor to CGS (not including cosmological corrections)'][0],
-                               'h-scale-exponent': info_s['h-scale exponent'][0],
-                               'aexp-scale-exponent': info_s['a-scale exponent'][0]}
+        info    = {'VarDescription': info_s['Description'] + info_s['Expression for physical CGS units'],
+                           'CGSConversionFactor': info_s['Conversion factor to CGS (not including cosmological corrections)'][0],
+                           'h-scale-exponent': info_s['h-scale exponent'][0],
+                           'aexp-scale-exponent': info_s['a-scale exponent'][0]}
         return {'Value': values, 'Info': info}
     
   

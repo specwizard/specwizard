@@ -110,12 +110,15 @@ class Analyse_Opticaldepth:
         # create array to store results
         result = []
         for sight in np.arange(self.nsight):
-            varname = 'LOS_{}'.format(
-                sight
-            ) + '/' + self.element + '/' + self.ion + '/' + 'optical depth-weighted/Optical depths'
-            values = np.array(hfile[varname][...])
-            result.append(values)
-
+            
+            try :
+                varname = 'LOS_{}'.format(
+                    sight
+                ) + '/' + self.element + '/' + self.ion + '/' + 'optical depth-weighted/Optical depths'
+                values = np.array(hfile[varname][...])
+                result.append(values)
+            except:
+                print("Warning! problem reading sightline #",sight)
         # create velocity array
 
         hfile.close()

@@ -7,6 +7,7 @@ def get_simkeys(sim_name='eagle'):
     elementnames_TNG   = ['Hydrogen', 'Helium','Carbon','Nitrogen','Oxygen','Neon','Magnesium','Silicon','Iron']
     sym_keys = {}
     sym_keys['eagle'] = {}
+    sym_keys['eagle']['Header'] = {'Redshift': ['Header','Redshift']}
     sym_keys['eagle']['los'] ={'elementnames'           : elementnames_eagle,
                                'groupname'              : 'LOS{}',
                                'ElementAbundance'       : 'ElementAbundance',
@@ -39,6 +40,8 @@ def get_simkeys(sim_name='eagle'):
                                        'Metallicities'     : 'Metallicity',
                                        'StarFormationRate' : 'StarFormationRate'}
     sym_keys['swift'] = {}
+    sym_keys['swift']['Header'] = {'Redshift': ['Cosmology','Redshift']}
+
     sym_keys['swift']['los'] = {'elementnames'          : elementnames_swift,
                                'groupname'              : 'LOS_{:04d}',
                                'ElementAbundance'       : 'ElementMassFractions',
@@ -72,6 +75,8 @@ def get_simkeys(sim_name='eagle'):
                                'StarFormationRate'      : 'StarFormationRates'}
     
     sym_keys['hydrangea'] = {}
+    sym_keys['hydrangea']['Header'] = {'Redshift': ['Header','Redshift']}
+
     sym_keys['hydrangea']['snapshot'] =  {'elementnames'   : elementnames_hydra,
                                        'groupname'         : 'PartType0',
                                        'ElementAbundance'  : 'ElementAbundance',
@@ -84,6 +89,8 @@ def get_simkeys(sim_name='eagle'):
                                        'Metallicities'     : 'Metallicity',
                                        'StarFormationRate' : 'StarFormationRate'}
     sym_keys['colibre'] = {}
+    sym_keys['colibre']['Header'] = {'Redshift': ['Cosmology','Redshift']}
+
     sym_keys['colibre']['los'] = {'elementnames'          : elementnames_swift,
                                'groupname'              : 'LOS_{:04d}',
                                'ElementAbundance'       : 'ElementMassFractionsInGas',

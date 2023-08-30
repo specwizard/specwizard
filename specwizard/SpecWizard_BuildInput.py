@@ -1,7 +1,6 @@
 # %load SpecWizard_BuildInput.py
 #%%writefile SpecWizard_BuildInput.py 
 
-
 import os
 import h5py
 import sys
@@ -18,23 +17,19 @@ class Build_Input:
     If the checks are sucesesfull the inputparameter will be formated into the dictionary 'specparams'
     this dictionary will be use in the rest of the program.
     """
-    
     def __init__(self):
-    
-        
-    
-    
+
         self.sym_types  = ['eagle','swift','hydrangea','colibre','illustries']
         self.snap_types = ["snapshot","los"]
-        
+
         self.specparams = {}
-        
+
         ReadIonFrac = {'ReadIonFrac':True,
-                       'ReadHydrogen':True,
-                       'HI':"NeutralHydrogenAbundance",
-                       'ReadHelium':False,
-                       'He':""}
-        
+                        'ReadHydrogen':True,
+                        'HI':"NeutralHydrogenAbundance",
+                        'ReadHelium':False,
+                        'He':""}
+
         #we set extra parameters as default. This can be change by running the function self.extra_params().
         self.specparams['file_type']              = {}
         self.specparams['snapshot_params']        = {}
@@ -44,27 +39,27 @@ class Build_Input:
                                         'PecVelEffectsOff'  : False, 
                                         'Veloffset'         : 0,
                                         'VoigtOff'          : False}
-        
+
         self.specparams['extra_parameters']       = {   'periodic': True,
                                                         'Kernel': "Bspline",
                                                         'pixkms': 1,
                                                         'Veloffset': 0,
                                                         'ReadIonFrac':ReadIonFrac}
 
-    
+
     def FileType(self, sim_type ='EAGLE', snap_type = 'LOS'):
         """
         This function will check if the simulation type and/or the simulation file is supported. If is the case will format this values into the dictionary with all the inputs. The input is not case-sensitive.  
-        
+
         Parameters
         ----------    
-    
+
         sim_type : str 
-        	   Simulation type, supported options ['Eagle','Swift','Hydrangea'] 
+                Simulation type, supported options ['Eagle','Swift','Hydrangea'] 
         snap_type : str 
-                   Type of output format full snapshots or line of sight  figths, valid options ['Snapshot','LOS']
-               
-       	"""
+                    Type of output format full snapshots or line of sight  figths, valid options ['Snapshot','LOS']
+                
+        """
 
         snap = snap_type.lower()
         sym = sim_type.lower()
@@ -80,49 +75,48 @@ class Build_Input:
         self.specparams['file_type']['sim_type']  = sym 
         self.specparams['file_type']['snap_type'] = snap 
     
-#        return self.specparams 
+        #return self.specparams 
     def SnapshotParams(self,path = '/cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/los/', file = 'part_los_z3.275.hdf5'):
-        
         """
         Will check if the path and file are valid. If so will be formated into the specparams.
 
         Parameters
         ----------           
         path : str 
-              /path/to/simulation/files
+            /path/to/simulation/files
         file : str
-              simulationfile.hdf5
+            simulationfile.hdf5
         """
-        
+
         self.check_for_directory(path)
-        
+
         self.check_hdf5(path+"/"+file)
-        
+
         self.specparams['snapshot_params']['directory'] = path 
         self.specparams['snapshot_params']['file']      = file 
-        
-    ProjectionAxes   = (Projx,Projy,Projz) = ('simy','simz','simx')
-    ProjectionStart  = (0.1 , 0.5, 0 )
-    ProjectionLength = 1
+            
+        #ProjectionAxes   = (Projx,Projy,Projz) = ('simy','simz','simx')
+        #ProjectionStart  = (0.1 , 0.5, 0 )
+        #ProjectionLength = 1
+
     def Sightline(self,nsight  = None, ProjectionAxes = None ,ProjectionStart = None, ProjectionLength=None,SightLength=None,ProjectionExtend=None,):
 
         """
         This functions generate the sightline characteristics. We recomend to see the example notebooks for further clarification.  If ``None``, the default values will be used.
 
-	Parameters. 
-	----------
+        Parameters. 
+        ----------
 
-	nsight : int 
-		 If using LOS simulation input, corresponds to the number of sightline in the file to read, is also used for labeling the sightline (default=0).
-	ProjectionAxes : tuple(str)
-			Used for snapshot input. This create the relation between the projection axis and the simulation axis. The default case is when the projection axis is aligned with the simulation axis ``ProjectionAxes = ('projx','projy','projz') = ('simx','simy','simz')``. But if for example we want to do the projection along the $y-axis$ of the simulation then ``ProjectionAxes=('simx','simz','simy')``
-	ProjectionStart : tuple(float)
-                         The starting position as a fraction of the box-length of the sightline. If we take the default value, means that our sighline  will be centered in the simulation point $(x,z)=(0.5*\mathrm{boxsize},0.5*\mathrm{boxsize})$ and will start at the coordinate $z=0$.(default=(0.5,0.5,0)
-	ProjectionLength : float 
-                           Set as a fraction of the box size the lenght of the sightline. (default=1) 
-	ProjectionExtend : float
-			   Set as a fraction of the sightline length. This will insert the spectra into an array x times bigger than the sightline length. Is usefull for broadening effects. (default=1.)
-
+        nsight : int 
+            If using LOS simulation input, corresponds to the number of sightline in the file to read, is also used for labeling the sightline (default=0).
+        ProjectionAxes : tuple(str)
+            Used for snapshot input. This create the relation between the projection axis and the simulation axis. The default case is when the projection axis is aligned with the simulation axis ``ProjectionAxes = ('projx','projy','projz') = ('simx','simy','simz')``. But if for example we want to do the projection along the $y-axis$ of the simulation then ``ProjectionAxes=('simx','simz','simy')``
+        ProjectionStart : tuple(float)
+            The starting position as a fraction of the box-length of the sightline. If we take the default value, means that our sighline  will be centered in the simulation point $(x,z)=(0.5*\mathrm{boxsize},0.5*\mathrm{boxsize})$ and will start at the coordinate $z=0$.(default=(0.5,0.5,0)
+        ProjectionLength : float 
+            Set as a fraction of the box size the lenght of the sightline. (default=1) 
+        ProjectionExtend : float
+        Set as a fraction of the sightline length. This will insert the spectra into an array x times bigger than the sightline length. Is usefull for broadening effects. (default=1.)
         """
         SimDict          = {'simx':0 , 'simy':1, 'simz':2}
         if ProjectionAxes == None:
@@ -137,32 +131,32 @@ class Build_Input:
             xpos,ypos,zpos = ProjectionStart
             
         sightline = {'ProjectionAxes':ProjectionAxes,
-                     'x-axis': xaxis,
-                     'y-axis': yaxis,
-                     'z-axis': zaxis,
-                     'ProjectionStart':ProjectionStart,
-                     'x-position' :xpos,
-                     'y-position' :ypos,
-                     'z-position' :zpos,
-                     'ProjectionLength': ProjectionLength,
-                     'SightLength':SightLength,
-                     'ProjectionExtend':ProjectionExtend,
-                     'nsight':     nsight}
+                        'x-axis': xaxis,
+                        'y-axis': yaxis,
+                        'z-axis': zaxis,
+                        'ProjectionStart':ProjectionStart,
+                        'x-position' :xpos,
+                        'y-position' :ypos,
+                        'z-position' :zpos,
+                        'ProjectionLength': ProjectionLength,
+                        'SightLength':SightLength,
+                        'ProjectionExtend':ProjectionExtend,
+                        'nsight':     nsight}
         
         if self.specparams['file_type']['snap_type'] == 'snapshot':
             sightline_default = {
-                     'ProjectionAxes':('simx','simy','simz'),
-                     'x-axis': 0,
-                     'y-axis': 1,
-                     'z-axis': 2,
-                     'ProjectionStart':(0.5,0.5,0),
-                     'x-position' :0.5,
-                     'y-position' :0.5,
-                     'z-position' :0,
-                     'ProjectionLength': 1,
-                     'SightLength':1,
-                     'ProjectionExtend': {"extend":False,"extendfactor":3},
-                     'nsight':     0}
+                        'ProjectionAxes':('simx','simy','simz'),
+                        'x-axis': 0,
+                        'y-axis': 1,
+                        'z-axis': 2,
+                        'ProjectionStart':(0.5,0.5,0),
+                        'x-position' :0.5,
+                        'y-position' :0.5,
+                        'z-position' :0,
+                        'ProjectionLength': 1,
+                        'SightLength':1,
+                        'ProjectionExtend': {"extend":False,"extendfactor":3},
+                        'nsight':     0}
                         
             default_keys = sightline_default.keys()
 
@@ -179,26 +173,23 @@ class Build_Input:
         self.non_sense_checks(self.specparams)
         return self.specparams
         
-        
-        
-    
     def SetIonTableParams(self,  table_type='specwizard_cloudy', iondir = '/cosma7/data/Eagle/SpecWizardCloudytables/HM12/', fname='', ions =  [('Hydrogen', 'H I') ],SFR_properties = {'modify_particle':True,'ignore_particle': True,'Temperature [K]':1e4},atomfile='./VpFit/atom.dat'):
         """
         Set the ion to use to calculate the spectra, the ionization tables to use for the calculation of the ion fractions and how to deal with star forming particles.
 
-	Parameters. 
-	----------
+        Parameters. 
+        ----------
 
         table_type : str 
-                     Name of the ionizations tables to use current options 'specwizard_cloudy' and 'ploeckinger'. The former corresponds to the Cloudy tables created from the Cloudy notebook based in HM2012, and the latter correspond to the tables described in Ploeckinger et al. (2020). (default='specwizard_cloud')
+            Name of the ionizations tables to use current options 'specwizard_cloudy' and 'ploeckinger'. The former corresponds to the Cloudy tables created from the Cloudy notebook based in HM2012, and the latter correspond to the tables described in Ploeckinger et al. (2020). (default='specwizard_cloud')
         iondir: str 
-               Directory path to the ionization table. (default='HM12 table path in cosma')
+            Directory path to the ionization table. (default='HM12 table path in cosma')
         fname:  str 
-		Name of ionization table, only needed for ploeckinger tables. (default='')
+            Name of ionization table, only needed for ploeckinger tables. (default='')
         ions: list of tuples
-                List of elements and Ions to do e,g [(Element1, Ion1, Ion2),(Element2, Ion1,...),...], default=[('Hydrogen', 'H I') ]
+            List of elements and Ions to do e,g [(Element1, Ion1, Ion2),(Element2, Ion1,...),...], default=[('Hydrogen', 'H I') ]
         SFR_properties: dictionary
-        if ``modiy_particle: True`` we will deal with Star forming particles in one of two ways. If ``ignore particle = True``, will set to zero the IonizationFraction of SFR particles. If ``False`` we will set the Temperature of SFR by the indicated temperature value.  (default={'modify_particle':True,'ignore_particle': True,'Temperature [K]':1e4})  
+            if ``modiy_particle: True`` we will deal with Star forming particles in one of two ways. If ``ignore particle = True``, will set to zero the IonizationFraction of SFR particles. If ``False`` we will set the Temperature of SFR by the indicated temperature value.  (default={'modify_particle':True,'ignore_particle': True,'Temperature [K]':1e4})  
         """
         ions_available = []
         table_types = ['specwizard_cloudy', 'ploeckinger']
@@ -235,14 +226,14 @@ class Build_Input:
 
 
         ion_properties = {'table_type':table_type, 
-                          'iondir':iondir+'/', 
-                          'fname':fname,
-                          'ions-available':ions_available,
-                          'Ions': ions,
-                          'SFR_properties':SFR_properties,
-                          'atomfile':atomfile}
+                            'iondir':iondir+'/', 
+                            'fname':fname,
+                            'ions-available':ions_available,
+                            'Ions': ions,
+                            'SFR_properties':SFR_properties,
+                            'atomfile':atomfile}
         self.specparams['ionparams'] = ion_properties
-    
+
         #set Ions and elements
         elements         = Elements(atomfile=atomfile)
         transitionparams = {}
@@ -252,7 +243,7 @@ class Build_Input:
         #We always need hydrogen to be read since the ion fractions are calculated based on the hydrogen density 
         elements_check = [ions[i][0] for i in range(len(ions))]
         if "Hydrogen" not in elements_check:
-            ions.insert(0,('Hydrogen','H I'))    
+            ions.insert(0,('Hydrogen','H I'))
         
         for element, ion in ions:
             pars = elements.ElementParameters(ElementNames=[element])
@@ -283,27 +274,23 @@ class Build_Input:
             elementparams[element]["Mass"] = pars[element]["Weight"]
         
         self.specparams["elementparams"]  = elementparams
-    
-    
-    
-
         
     def SetODParams(self,VelOffset_kms = 0., PecVelEffectsOff = False, ThermalEffectsOff = False,VoigtOff = False):
         """
-            User options that affect the calculation of the Optical Depth. 
+        User options that affect the calculation of the Optical Depth. 
 
-            Parameters. 
-	    ----------
+        Parameters
+        ----------
 
-            ThermalEffectsOff : boolean
-		                Turn Off the thermal effecs in the calculation of OD's. (default='False') 
-            PecVelEffectsOff :  boolean 
-		                Turn off the effects of peculiar velocities. (default='False')  
-            
-	    VelOffset :         float
-                                Impose a shift in velocity space [km/s].  (default=0.0)
-            VoigtOff :          boolean
-                                If True, will turn off the voigt profile for hydrogen. (default='False')
+        ThermalEffectsOff : boolean
+            Turn Off the thermal effecs in the calculation of OD's. (default='False') 
+        PecVelEffectsOff :  boolean 
+            Turn off the effects of peculiar velocities. (default='False')  
+
+        VelOffset :         float
+            Impose a shift in velocity space [km/s].  (default=0.0)
+        VoigtOff :          boolean
+            If True, will turn off the voigt profile for hydrogen. (default='False')
 
         """
         
@@ -312,50 +299,41 @@ class Build_Input:
                                         'PecVelEffectsOff'  : PecVelEffectsOff, 
                                         'Veloffset'         : VelOffset_kms,
                                         'VoigtOff'          : VoigtOff }
-        
-
-        
-
+            
     def SetLongSpectraParams(self,lambda_min = 945.,lambda_max = 8000., dlambda = 0.5, z_qsr = 3.0, delta_z = 0.01,file_dir = ''):
         """
         Set the parameters for the long spectra
 
-	Parameters. 
-	----------
+        Parameters. 
+        ----------
 
-	lambda_min : float
-		Set the minimum wavelength that will be included in the spectra. (default = 945.)
-	lambda_max : float
-		Set the maximum wavelength that will be included in the spectra. (default = 8000.)
-	dlambda  : float
-		Set the pixel size of the spectrograph
-	z_qsr    : float
-		Redshift location of the "back light quasar". (default = 3.0)
-	delta_z  : float
-		Redshift tolerance. This will find the simulation file(s) that are within that tolerence for a given redshift section of the spectra. In case of finding multiplefiles one will be randomly selected. In case of not finding any file, the procedure will stop. (default = 0.01)
-	file_dir : str
-		Directory in which the simulation files that will constitute the longspectra are. SpecWizard will automatically read them and sort them by redshift. (default=' ') 
+        lambda_min : float
+            Set the minimum wavelength that will be included in the spectra. (default = 945.)
+        lambda_max : float
+            Set the maximum wavelength that will be included in the spectra. (default = 8000.)
+        dlambda  : float
+            Set the pixel size of the spectrograph
+        z_qsr    : float
+            Redshift location of the "back light quasar". (default = 3.0)
+        delta_z  : float
+            Redshift tolerance. This will find the simulation file(s) that are within that tolerence for a given redshift section of the spectra. In case of finding multiplefiles one will be randomly selected. In case of not finding any file, the procedure will stop. (default = 0.01)
+        file_dir : str
+            Directory in which the simulation files that will constitute the longspectra are. SpecWizard will automatically read them and sort them by redshift. (default=' ') 
         """
-        self.specparams['longspectra'] = {'lambda_min' : lambda_min,
-                                          'lambda_max' : lambda_max,
-                                          'dlambda'    : dlambda,
-                                          'z_qsr'      : z_qsr,
-                                          'delta_z'    : delta_z,
-                                          'file_dir'   : file_dir}
 
     def ExtraParams(self,periodic= True, kernel="Gauss",pixkms=1,atomfile='./VpFit/atom.dat',veloff=0,
                     ReadIonFrac = {'ReadIonFrac':True,
-                       'ReadHydrogen':True,
-                       'HI':"NeutralHydrogenAbundance",
-                       'ReadHelium':False,
-                       'He':""} ):
-        '''
+                        'ReadHydrogen':True,
+                        'HI':"NeutralHydrogenAbundance",
+                        'ReadHelium':False,
+                        'He':""} ):
+        """
         This are parameters that are thought for specific or more advance users. 
         Inputs:
             periodic: Bolean, default=True. Turn on/off periodic boundary condition effects. 
             Kernel  : string, default=Bspline. Selection of the SPH kernel for the interpolation in the line projection. 
             Veloff  : Float[kms],  default=0. Will add this value to all the peculiar velocities. Units km/s. 
-        '''
+        """
         
         
             
@@ -366,12 +344,12 @@ class Build_Input:
                                                 'atomfile': atomfile,
                                                 'Veloffset': veloff,
                                                 'ReadIonFrac':ReadIonFrac}
-       # self.non_sense_checks(self.specparams)
+        #self.non_sense_checks(self.specparams)
 
     def non_sense_checks(self,specparams):
         sightline = specparams['sightline']
         extra_params = specparams['extra_parameters']
-        
+
         if (self.specparams['file_type']['snap_type'] == 'snapshot') and (sightline['x-axis']+sightline['y-axis']+sightline['z-axis'] != 3):
             print("ERROR! Invalid values for axis!")
 
@@ -383,28 +361,25 @@ class Build_Input:
         if not bol_dir:
             sys.exit("Path: "+path +"\n is not a valid directory")
         return bol_dir
-    
+
     def check_hdf5(self,fname):
         if not h5py.is_hdf5(fname):
             sys.exit("Not a valid hdf5 file")
             
     def read_from_yml(self,yml_file = 'Wizard.yml'):
-	"""
-	This class read all the input data from a yml file 
-	
-	Parameters
-	----------
+        """
+        This class read all the input data from a yml file 
 
-	yml_file : str
-	name and path pointing to the parameter file. (default = "Wizard.yml")
+        Parameters
+        ----------
+        yml_file : str
+            name and path pointing to the parameter file. (default = "Wizard.yml")
 
-	Returns
-	-------
-
-	out : dictonary 
-		Formated dictionary with all the input that will be use for the rest of the program. 
-	"""
-        
+        Returns
+        -------
+        out : dictonary 
+            Formated dictionary with all the input that will be use for the rest of the program.
+        """
         with open('Wizard.yml') as file:
             wizard_yml = yaml.load(file, Loader=yaml.FullLoader)
         
@@ -440,7 +415,7 @@ class Build_Input:
 
         # longspectra 
         
-        try: 
+        try:
             lambda_min  = wizard_yml['LongSpectra']['lambda_min']
             lambda_max  = wizard_yml['LongSpectra']['lambda_max']
             dlambda     = wizard_yml['LongSpectra']['dlambda']

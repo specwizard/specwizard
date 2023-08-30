@@ -15,7 +15,7 @@ constants = Phys.ReadPhys()
 class InputFunctions:
     
     def __init__(self,fileparams={},header=None):
-        '''
+        """"
         This class containes a set of functions that are commonly shared among the different classes that read the data from simulations.
         
         Parameters
@@ -23,7 +23,7 @@ class InputFunctions:
         
         fileparams: dictionary
         The Wizard dictionary created by SpecWizard_BuildInput
-        '''
+        """ 
         
     
         self.fileparams = fileparams
@@ -233,23 +233,23 @@ class InputFunctions:
         
         def MeanSeparationLenght(N,V):
             
-        """
+            """
             We calculate the mean separation length to define the region that will be masked by the simulation reading function.
-            
+
             Parameters
             ----------
-            
+
             V : float
-            Volume of the simulation
+                Volume of the simulation
             N : int
-            Total number of particles
-            
+                Total number of particles
+
             Returns
             -------
-            
+
             out : float 
-            Mean separation length. 
-        """
+                Mean separation length. 
+            """
             ninv = V/N
             return pow(ninv,1/3)
                     
@@ -551,7 +551,8 @@ class ReadEagle:
     def __init__(self,fileparams={}):
         
         """
-        Class that contains functions to read particle data from the eagle simulation
+        Class that contains functions to read particle data from the eagle simulation. It uses the python port of ReadEagle:
+        https://github.com/kyleaoman/pyread_eagle
         
         Parameters
         ----------
@@ -577,9 +578,11 @@ class ReadEagle:
     
     
     def read_header(self):
-        '''
-        Reads header from the eagle simulation.
-        '''
+        """
+        Reads header from the eagle simulation. 
+        
+        
+        """
 
         header = self.inputfunc.read_group()
  
@@ -635,6 +638,9 @@ class ReadEagle:
         return Header
 
     def read_particles(self):
+        """
+        Read the all the needed particle properties for the calculation of the spectra. Both for snapshots and line of sight files. 
+        """
         
         groupname = self.groupname
         groupdic  = self.groupdic
@@ -696,6 +702,15 @@ class ReadEagle:
         
         
     def read_variable(self,varname='PartType0/Density'):
+        """
+        Reads a particular hdf5 group and formats it's attributes
+        
+        Parameters
+        ----------
+        
+        varname : str
+        name of the hdf5 group with full hdf5 path
+        """
         
         if self.snaptype == 'los':
             info   = self.inputfunc.read_group(groupname = varname)
@@ -720,7 +735,9 @@ class ReadEagle:
         return {'Value': values, 'Info': info}
         
     def IsVelocity(self, name):
-        # Check whether we are reading the velocity variable
+        """
+        Check whether we are reading the velocity variable. This check is needed since line of sight files from eagle uses a wrong conversion factors for velocities. 
+        """
         words    = name.split('/')
         Velocity = False
         for word in words:
@@ -731,6 +748,19 @@ class ReadEagle:
 
     
 class ReadSwift:
+    
+    """
+    Class that contains functions to read particle data produced by the SWIFT code. it uses the python library swiftsim.io 
+    https://github.com/SWIFTSIM/swiftsimio
+
+    Parameters
+    ----------
+
+
+    fileparams : dictionary
+        The Wizard dictionary, output from SpecWizard_BuildInput
+    """
+    
     
     def __init__(self,fileparams={}):
         self.fileparams = fileparams
@@ -750,6 +780,12 @@ class ReadSwift:
     
     
     def read_header(self):
+        
+        """
+        Reads header as produced by SWIFT. This includes the COLIBRE simulation.  
+        
+        
+        """
         
         header    = self.inputfunc.read_group()
         cosmology = self.inputfunc.read_group('Cosmology')
@@ -808,6 +844,9 @@ class ReadSwift:
     
     
     def read_particles(self):
+        """
+        Read the all the needed particle properties for the calculation of the spectra. Both for snapshots and line of sight files. 
+        """        
         
         groupname = self.groupname
         groupdic  = self.groupdic
@@ -883,6 +922,15 @@ class ReadSwift:
     
     
     def read_variable(self,varname='PartType0/Density'):
+        """
+        Reads a particular hdf5 group and formats it's attributes
+        
+        Parameters
+        ----------
+        
+        varname : str
+        name of the hdf5 group with full hdf5 path
+        """
         
         if self.snaptype == 'los':
             hfile  = h5py.File(self.fname, "r")
@@ -919,12 +967,33 @@ class ReadSwift:
   
 
     def swiftswimio_format(self,varname="Coordinates"):
+        
+        """
+        Formats the string so it can be used for swiftsimio 
+        
+        Parameters
+        ----------
+        
+        varname : str
+        Name of the particle property to read from swift using swiftsim.io
+        
+        Returns
+        -------
+        
+        out : str
+        Formated string 
+        """
         varname_formated = re.sub(r"([A-Z])", r"_\1", varname)
 
         return varname_formated[1:].lower()
 
     
 class ReadHydrangea:
+    """
+    Class that contains functions to read particle data produced by the hydrangea simulation. it uses the python library to read hydrangea
+    https://github.com/SWIFTSIM/swiftsimio
+
+    """
     
     def __init__(self,fileparams={}):
         self.fileparams = fileparams
@@ -1073,6 +1142,18 @@ class ReadHydrangea:
         
         
     def read_variable(self,varname='PartType0/Density'):
+        """
+            Reads a particular hdf5 group and formats it's attributes
+
+            Parameters
+            ----------
+
+            varname : str
+            name of the hdf5 group with full hdf5 path
+        """
+
+        
+        
         info   = self.inputfunc.read_group(groupname = varname)
         
         if self.snaptype == 'los':

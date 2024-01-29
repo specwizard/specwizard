@@ -42,7 +42,7 @@ class InputFunctions:
         if header != None:
             self.header = header
         
-    def read_group(self, groupname ='Header'):
+    def read_group(self, groupname ='Header',alt_fname=None):
         """
         Read the attributes of a specific hdf5 data group
         
@@ -60,7 +60,11 @@ class InputFunctions:
         Dictionary with the name (key) and value of the attribute. 
         """
     # read all entries for this particular hdf5 group
-        hfile = h5py.File(self.fname, "r")
+        if alt_fname == None:
+            fname = self.fname
+        else:
+            fname = alt_fname
+        hfile = h5py.File(fname, "r")
         group    = hfile[groupname]
         grp_dict = {}
         for k in group.attrs.keys():
@@ -319,6 +323,12 @@ class InputFunctions:
         
         groupdic         = self.groupdic
         userions         = self.fileparams['ionparams']['Ions']
+
+#        if self.simtype == 'eagle':
+            #In this case we use the output from urchin the ion fractions are in different files from the snapshot but they can be read using readeagle
+#                IonFracs = {}
+
+#                IonFracs[ion] = {'Value': IonFrac['Value'],'Info': IonFrac['Info']}
 
         if self.simtype == 'colibre':
 
@@ -694,14 +704,24 @@ class ReadEagle:
         if self.fileparams['ionparams']['SFR_properties']['modify_particle']:            
             particles['StarFormationRate']   = self.inputfunc.set_SFR(self.read_variable,groupname,particles)
 
-        
+        if self.readIonFrac:
+            IonFracs = {}
+            fname_urchin = self.fileparams['extra_parameters']['ReadIonFrac']['fname_urchin']
+            h1_name    = self.fileparams['extra_parameters']['ReadIonFrac']['HI']
+            self.inputfunc = InputFunctions(self.fileparams)
+            self.RE_snap = read_eagle.EagleSnapshot(fname_urchin)
+            self.RE_snap.select_region(sim_xmin,sim_xmax,sim_ymin,sim_ymax,sim_zmin,sim_zmax)
+            IonFrac = self.read_variable(varname = groupname + '/' + h1_name,alt_fname=fname_urchin)        
+            IonFracs["H I"] = {'Value': IonFrac['Value'],'Info': IonFrac['Info']}
+            particles['SimulationIonFractions'] = IonFracs
+
         particles['Positions']['Value'] = self.inputfunc.flip_los(particles['Positions']['Value'],sightline)
         particles['Velocities']['Value'] = self.inputfunc.flip_los(particles['Velocities']['Value'],sightline)        
         
         return particles,sightline
         
         
-    def read_variable(self,varname='PartType0/Density'):
+    def read_variable(self,varname='PartType0/Density',alt_fname=None):
         """
         Reads a particular hdf5 group and formats it's attributes
         
@@ -729,9 +749,10 @@ class ReadEagle:
         if self.snaptype =='snapshot':
             varname_frmtd = varname.replace("PartType0/","")
             values = self.RE_snap.read_dataset(0,varname_frmtd)[self.los_mask]
-
-            info   = self.inputfunc.read_group(groupname = varname)
-
+            if alt_fname == None:
+                info   = self.inputfunc.read_group(groupname = varname)
+            else:
+                info   = self.inputfunc.read_group(groupname = varname,alt_fname=alt_fname)
         return {'Value': values, 'Info': info}
         
     def IsVelocity(self, name):
@@ -907,6 +928,12 @@ class ReadSwift:
         particles['SmoothingLengths']["Value"] /= FWHM
         print("We divide Swift's smoothing length by {0:1.3f} to convert from FWHM to extent of finite support".format(FWHM))
 
+        if (self.simtype == 'swift' and self.readIonFrac):
+            print("this is happening")
+            field_name= self.fileparams['extra_parameters']['ReadIonFrac']['HI']
+            ionfrac = self.read_variable(varname = groupname + '/' + field_name)
+            particles['SimulationIonFractions'] = {}
+            particles['SimulationIonFractions']["H I"] = ionfrac
         if (self.simtype == 'colibre'):
             
             particles['SimulationIonFractions'] = self.inputfunc.ReadAndShapeIonFrac(self.read_variable,particles,groupname)

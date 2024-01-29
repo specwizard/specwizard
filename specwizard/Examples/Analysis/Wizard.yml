@@ -1,0 +1,43 @@
+# Yalm Ain't Markup Language
+# Paramter file for specwizard
+
+
+file_type:
+    
+    sim_type: swift
+    snap_type: los
+    
+snapshot_params:
+    
+    directory: /cosma7/data/dp004/dc-aram1/QLA_runs/L0025N1240/
+    file: los_0033.hdf5
+
+sightline:
+    ProjectionAxes: null
+    ProjectionStart: null
+    ProjectionLength: null
+    SightLength: null
+    ProjectionExtend:
+        extend: False
+        extendfactor: null
+    nsight: 0
+    
+ionparams:
+    table_type: Ploeckinger 
+    iondir: /cosma7/data/dp004/dc-aram1/pyspecwizard_main/sylviatables/
+    fname: UVB_dust1_CR1_G1_shield1.hdf5
+    #table_type: specwizard_cloudy
+    #iondir: /cosma7/data/Eagle/SpecWizardCloudytables/HM12/
+    #fname: null
+    ions: [['Hydrogen', 'H I']]
+    SFR_properties:
+        modify_particle: True
+        ignore_particle: False
+        Temperature [K]: 1.0E+4    # Putting the plus sign between E and the number is important to not be processed as a string. 
+    atomfile: ../../atom_dat.hdf5
+    
+ODParams:
+    VelOffset_kms: 0
+    PecVelEffectsOff: False
+    ThermalEffectsOff: False
+    VoigtOff: False

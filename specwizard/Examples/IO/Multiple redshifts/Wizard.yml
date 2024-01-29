@@ -9,46 +9,32 @@ file_type:
     
 snapshot_params:
     
-    directory: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/snapshot_019_z001p004
-    file: snap_019_z001p004.0.hdf5
+    directory: /cosma7/data/Eagle/ScienceRuns/Planck1/L0050N0752/PE/REFERENCE/data/snapshot_028_z000p000/
+    file: snap_028_z000p000.0.hdf5
 
 sightline:
-    ProjectionAxes: ['simx','simy','simz']
-    ProjectionStart: [0.5,0.5,0]
-    ProjectionLength: 1
+    ProjectionAxes: null
+    ProjectionStart: null
+    ProjectionLength: null
     SightLength: null
     ProjectionExtend:
         extend: False
-        extendfactor: 3
+        extendfactor: null
     nsight: 0
     
 ionparams:
     table_type: specwizard_cloudy
     iondir: /cosma/home/dp004/dc-aram1/workdir7/pyspecwizard_main/spwtables/HM12/
     fname: null
-    ions: [['Hydrogen', 'H I'],['Helium','He II'],['Carbon','C III'],['Carbon','C IV'],['Oxygen','O VI'],['Silicon','Si IV']]
+    ions: [['Hydrogen','H I'],['Helium','He II'],['Carbon','C IV'],['Silicon','Si IV'],['Oxygen','O VI']]
     SFR_properties:
         modify_particle: True
         ignore_particle: False
         Temperature [K]: 1.0E+4    # Putting the plus sign between E and the number is important to not be processed as a string. 
-    atomfile: atom_info.hdf5
+    atomfile: ../../../atom_dat.hdf5
     
 ODParams:
     VelOffset_kms: 0
     PecVelEffectsOff: False
     ThermalEffectsOff: False
     VoigtOff: False
-    
-
-LongSpectra:
-    lambda_min: 300.0
-    lambda_max: 8000.0
-    dlambda: 0.5
-    z_qsr: 3.2
-    delta_z: 0.1
-    #file_dir: ./eagle_los/
-    file_dir: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/los/ #./Analisis/long_los/ #s
-    
-
-
-    

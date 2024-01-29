@@ -9,12 +9,12 @@ file_type:
     
 snapshot_params:
     
-    directory: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/snapshot_014_z002p237/
-    file: snap_014_z002p237.0.hdf5
+    directory: /madfs/data/dc-syke1/Eagle/ScienceRuns/Planks1/L0050N1504/PE/RECALIBRATED/data/snapshot_012_z003p017/
+    file: snap_012_z003p017.0.hdf5
 
 sightline:
     ProjectionAxes: ['simx','simy','simz']
-    ProjectionStart: [0.5,0.5,0]
+    ProjectionStart: [0.4120055,0.2248949,0]
     ProjectionLength: 1
     SightLength: null
     ProjectionExtend:
@@ -23,18 +23,32 @@ sightline:
     nsight: 0
     
 ionparams:
-    table_type: specwizard_cloudy
-    iondir: /cosma7/data/Eagle/SpecWizardCloudytables/HM12/
-    fname: null
-    ions: [['Hydrogen', 'H I'],['Helium','HeII'],['Carbon','C IV'],['Silicon','SiIV']]
+    table_type: Ploeckinger 
+    iondir: /cosma7/data/dp004/dc-aram1/pyspecwizard_main/sylviatables/
+    fname: UVB_dust1_CR1_G1_shield1.hdf5
+   # table_type: specwizard_cloudy
+   # iondir: /cosma7/data/Eagle/SpecWizardCloudytables/HM12/
+   # fname: null
+    ions: [['Hydrogen', 'H I'],['Helium','He II'],['Carbon','C III'],['Carbon','C IV'],['Oxygen','O II'],['Oxygen','O III']]
     SFR_properties:
         modify_particle: True
         ignore_particle: False
         Temperature [K]: 1.0E+4    # Putting the plus sign between E and the number is important to not be processed as a string. 
-    atomfile: ../../VpFit/atom.dat
+    atomfile: ../../../atom_dat.hdf5
     
 ODParams:
     VelOffset_kms: 0
     PecVelEffectsOff: False
     ThermalEffectsOff: False
     VoigtOff: False
+    
+extraparams:
+    periodic: True
+    pixkms: 1
+    ReadIonFrac:
+        ReadIonFrac: True
+        ReadHydrogen: True
+        HI: HydrogenOneFraction
+        ReadHelium: False
+        He: ""
+        fname_urchin: /madfs/data/dc-syke1/Urchin/Runs/ScienceRuns/Planck1/L0050N1504/RECAL/data/snapshot_012_z003p017/Combine/urchin_snap_012_z003p017.0.hdf5

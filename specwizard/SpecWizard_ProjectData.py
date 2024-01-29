@@ -139,7 +139,7 @@ class SightLineProjection:
         shift_in_z   = zproj 
         int_zmins    = ((particles['Positions']['Value'][:,2] - h -shift_in_z) / pix).astype(int) - 1
         zcents       = particles['Positions']['Value'][:,2] - shift_in_z
-        int_zcents   = (zcents / pix).astype(int)
+        int_zcents   = np.round(zcents / pix).astype(int)
         int_zmaxs    = ((particles['Positions']['Value'][:,2] + h - shift_in_z) / pix).astype(int) + 1
 
 
@@ -259,37 +259,52 @@ class SightLineProjection:
             intz     = np.array(intz[mask])
             
 
-            if len(zvals) == 0:
-                continue
-            bvals    = np.zeros_like(zvals) + b[i]                                # impact parameter in units of smoothing length
-            pts      = np.column_stack((bvals, zvals))                            # points (b,z) that particle contributes to
-#            column   = interpolate.interpn((btable, ztable), table, pts, bounds_error=False, fill_value=None) # cumulative column density contributed to these pixels
-            try:
-                column   = interpolate.interpn((btable, ztable), table, pts, bounds_error=True, fill_value=None)
-            except:
-                print("bounds error: ", izmin, izmax, 1./hinv[i])
-                print("btable: ", btable.min(), btable.max())
-                print("ztable: ", ztable.min(), ztable.max())
-                print("bvals = ", bvals)
-                print("zvals = ", zvals)
-                
-            column  *= hinv[i]**2 # scale integral for h=1, to the actual value of h
+            if len(zvals) == 0 or len(zvals) == 1:
+                # print("Error len zvals = 0 .")
+                # print("Pix = ", pix)
+                # print("smoothing length= ", h[i])
+                # print(izmin,izmax)
+                # print("zpos",zcent)
+                # print("assigned pix", int_zcents[i] * pix)
+#                zvals = np.array(int_zcents[i] * pix) + h[i]
+                pts   = np.array([b[i],ztable.max()])
+                diff  = interpolate.interpn((btable, ztable), table, pts, bounds_error=True, fill_value=None)
+                diff *= hinv[i]**2
+                diff /= pix 
+                diff *= mass[i]
+                intz  = int_zcents[i]
             
-             
-            # difference the cumulative column to get the contribution to each pixel
-            diff     = (np.roll(column, -1) - column) / pix
-            diff[-1] = 0
-            
-            # account for periodic boundary conditions
-            if self.periodic:
-                intz[intz<0]    += npix
-                intz[intz>=npix]-= npix
             else:
-                mask = (intz >=0) & (intz < npix)
-                intz = intz[mask]
-                diff = diff[mask]
+                bvals    = np.zeros_like(zvals) + b[i]                                # impact parameter in units of smoothing length
+                pts      = np.column_stack((bvals, zvals))                            # points (b,z) that particle contributes to
+    #            column   = interpolate.interpn((btable, ztable), table, pts, bounds_error=False, fill_value=None) # cumulative column density contributed to these pixels
+                try:
+                    column   = interpolate.interpn((btable, ztable), table, pts, bounds_error=True, fill_value=None)
+                except:
+                    print("bounds error: ", izmin, izmax, 1./hinv[i])
+                    print("btable: ", btable.min(), btable.max())
+                    print("ztable: ", ztable.min(), ztable.max())
+                    print("bvals = ", bvals)
+                    print("zvals = ", zvals)
+                    
+                column  *= hinv[i]**2 # scale integral for h=1, to the actual value of h
                 
-            diff  *= mass[i]       # multiply with mass of particle                                                 
+                
+                # difference the cumulative column to get the contribution to each pixel
+                diff     = (np.roll(column, -1) - column) / pix
+                diff[-1] = 0
+                
+                # account for periodic boundary conditions
+                if self.periodic:
+                    intz[intz<0]    += npix
+                    intz[intz>=npix]-= npix
+                else:
+                    mask = (intz >=0) & (intz < npix)
+                    intz = intz[mask]
+                    diff = diff[mask]
+                    
+                diff  *= mass[i]       # multiply with mass of particle                                                 
+            
             mdiff  = np.copy(diff) # save mass-weighted kernel contribution
             
             # density-weighted quantities

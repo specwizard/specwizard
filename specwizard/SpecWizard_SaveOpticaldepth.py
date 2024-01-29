@@ -14,15 +14,15 @@ import h5py
     
 class OpticalDepth_IO:
     ''' Methods to write and read files containing spectra and optical dept '''
-    def __init__(self, fileparams=None, create=False):
-        self.dirname    = fileparams["Output"]["directory"]
-        self.fname      = fileparams["Output"]["fname"]
-        self.fileparams = fileparams
+    def __init__(self, wizard=None, create=True):
+        self.dirname    = wizard["Output"]["directory"]
+        self.fname      = wizard["Output"]["fname"]
+        self.wizard = wizard
         self.nspec      = 0
-        self.header     = fileparams["Header"]
+        self.header     = wizard["Header"]
         
         #
-        self.ions       = fileparams["ionparams"]["Ions"]
+        self.ions       = wizard["ionparams"]["Ions"]
         element_names   = np.array([ self.ions[i][0] for i in range(len(self.ions))])
         self.elements   = element_names
         
@@ -97,24 +97,24 @@ class OpticalDepth_IO:
             hfile["Header"].attrs[key] = value
             
         # add link to original snapshot
-        hfile["Header"].attrs["snapshot_directory"]   = self.fileparams["snapshot_params"]["directory"]
-        hfile["Header"].attrs["snapshot_file"]        = self.fileparams["snapshot_params"]["file"]
+        hfile["Header"].attrs["snapshot_directory"]   = self.wizard["snapshot_params"]["directory"]
+        hfile["Header"].attrs["snapshot_file"]        = self.wizard["snapshot_params"]["file"]
         
         # table for computing ionization balance
-        hfile["Header"].attrs["ionization_directory"] = self.fileparams["ionparams"]["iondir"]
+        hfile["Header"].attrs["ionization_directory"] = self.wizard["ionparams"]["iondir"]
         
         # number of sightlines
         hfile["Header"].attrs["number_of_sightlines"] = 0
 
         hfile.close()
         
-    def WriteProjection(self, projections):
+    def write_to_file(self, projections):
         ''' Add contents of this optical depth data to file     '''
 
         
         #
         nsight       = projections["nsight"]
-        info         = projections["SightInfo"]
+        info         = self.wizard['sightline']
         projection   = projections["Projection"]
         opticaldepth = projections["OpticaldepthWeighted"]
         

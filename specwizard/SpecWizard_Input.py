@@ -33,39 +33,62 @@ class ReadData:
         groupname = groupdic['groupname']
         self.groupname = groupname    
         self.wizard['short-LOS'] = False
-    
-    def read_particles(self, ):
+        self.header = self.read_header()
+        inputfunc   = InputFunctions(fileparams=self.wizard,header=self.header)
+        self.ToCGS  = inputfunc.ToCGS
+        self.Hubble = inputfunc.Hubble
+
+
+    def read_header(self):
         simtype = self.simtype
         if simtype == "eagle":            
             eagle               =  ReadEagle(self.wizard)
-            self.header         =  eagle.read_header()
+            header         =  eagle.read_header()
+ 
+        elif (simtype == "swift") or (simtype == "colibre"):
+        
+            swift               =  ReadSwift(self.wizard)
+            header         =  swift.read_header()
+
+        elif simtype == "illustris":
+              
+            illustris           =  ReadIllustris(self.wizard)
+            header         =  illustris.read_header()
+
+        elif simtype == "hydrangea":
+              
+            hydrangea           =  ReadHydrangea(self.wizard)
+            header         =  hydrangea.read_header()
+
+        else:
+            print("Simulation not supported!")         
+
+        return header
+    def read_particles(self):
+        simtype = self.simtype
+        if simtype == "eagle":            
+            eagle               =  ReadEagle(self.wizard)
             particles,sightline =  eagle.read_particles()
  
         elif (simtype == "swift") or (simtype == "colibre"):
         
             swift               =  ReadSwift(self.wizard)
-            self.header         =  swift.read_header()
             particles,sightline =  swift.read_particles()
 
         elif simtype == "illustris":
               
             illustris           =  ReadIllustris(self.wizard)
-            self.header         =  illustris.read_header()
             particles,sightline =  illustris.read_particles()
 
         elif simtype == "hydrangea":
               
             hydrangea           =  ReadHydrangea(self.wizard)
-            self.header         =  hydrangea.read_header()
             particles,sightline =  hydrangea.read_particles()
 
         else:
             print("Simulation not supported!") 
 
             
-        inputfunc   = InputFunctions(fileparams=self.wizard,header=self.header)
-        self.ToCGS  = inputfunc.ToCGS
-        self.Hubble = inputfunc.Hubble
         
         self.wizard['sightline'] = sightline
         self.wizard['Header'] = self.header

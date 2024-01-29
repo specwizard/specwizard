@@ -6,7 +6,7 @@ import re
 import mendeleev
 import matplotlib.pyplot as plt
 from collections import OrderedDict
-
+import h5py 
 ElementNames = ['Hydrogen', 'Helium', 'Carbon', 'Oxygen', 'Silicon', 'Iron']
 class Elements:
     """
@@ -18,11 +18,11 @@ class Elements:
         ----------    
     
            atomfile  : str
-                File that comes with VpFit with atomic data. (default = 'atome.dat')
+                hdf5 ile that was generated with SpecWizard_atomfile. (default = 'atome_dat.hdf5')
     """
     
     def __init__(self, 
-                 atomfile="/cosma/home/dphlss/tt/atom.dat"):
+                 atomfile="atome_dat.hdf5"):
         
         # file containing physical parameters of ions and elements
         self.atomdat       = atomfile
@@ -50,137 +50,36 @@ class Elements:
         """
         
         elementnames = ElementNames
-        Parameters   = {}
+        parameters   = {}
         # astronomical convention for ions, e.g. HI == neutal hydrogen, HII is ionized hydrogen, etc.
         IonState     = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 
                         'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII',
                        'XVIII', 'XIX', 'XX', 'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV', 'XXVI']
-        
+        atomfile = h5py.File(self.atomdat ,'r')
         for element in elementnames:
-            if element == 'Hydrogen':
-                weight       = mendeleev.H.atomic_weight                
-                Nstates      = 2
-                States       = {}
-                for state in np.arange(Nstates):
-                    name                  = 'H {}'.format(IonState[state])  # ion identifier
-                    States[name]          = {}
-                    States[name]["Lines"] = self.LineSeries(name)
+            try:
+                element_ions = atomfile[element].keys()
+                element_chsym = atomfile[element].attrs["Symbol"]
+                if element_chsym == 'D':
+                    weight       = getattr(mendeleev,'H').atomic_weight
+                else:
+                    weight       = getattr(mendeleev,element_chsym).atomic_weight
+                nstates  = len(element_ions)
+                states   = {}
+                for ion in element_ions:
+                    name  = ion
+                    states[name] = {}
+                    lambda0 = atomfile[element][ion]['lambda0'][...]    
+                    fvalue  = atomfile[element][ion]['f-value'][...]
+                    states[name]["Lines"] = {'Lambda0': lambda0, 'f-value': fvalue}
+            except:
+                print('Element not included in the atomfile')
 
-            if element == 'Helium':
-                weight  = mendeleev.He.atomic_weight
-                Nstates = 3
-                States  = {}
-                for state in np.arange(Nstates):
-                    name         = 'He{}'.format(IonState[state])  # ion identifier
-                    States[name] = {}
-                    if (state == 0) or (state == 2):
-                        States[name]["Lines"] = self.LineSeries(name)
-                    if state == 1:
-                        # atom.dat does not contain HeII
-                        lambda0       = [303.7822]
-                        fvalue        = [0.416]
-                        States[name]["Lines"] = {'Lambda0': np.array(lambda0), 'f-value': np.array(fvalue)}
-                        
-
-            if element == 'Carbon':
-                weight  = mendeleev.C.atomic_weight
-                Nstates = 6
-                States  = {}
-                for state in np.arange(Nstates):
-                    name                  = 'C {}'.format(IonState[state])    # ion identifier
-                    States[name]          = {}
-                    States[name]["Lines"] = self.LineSeries(name)
-                
-            if element == 'Oxygen':
-                weight  = mendeleev.O.atomic_weight
-                Nstates = 8
-                States  = {}
-                for state in np.arange(Nstates):
-                    name                  = 'O {}'.format(IonState[state])         # ion identifier
-                    States[name]          = {}
-                    States[name]["Lines"] = self.LineSeries(name)
-                
-            if element == 'Silicon':
-                weight  = mendeleev.Si.atomic_weight
-                Nstates = 14
-                States  = {}
-                for state in np.arange(Nstates):
-                    name                  = 'Si{}'.format(IonState[state])         # chemical element name
-                    States[name]          = {}
-                    States[name]["Lines"] = self.LineSeries(name)
-                    
-            if element == 'Iron':
-                weight  = mendeleev.Fe.atomic_weight
-                Nstates = 26
-                States  = {}
-                for state in np.arange(Nstates):
-                    name                  = 'Fe{}'.format(IonState[state])         # chemical element name
-                    States[name]          = {}
-                    States[name]["Lines"] = self.LineSeries(name)
-
-            if element == 'Magnesium':
-                weight  = mendeleev.Mg.atomic_weight
-                Nstates = 12
-                States = {}
-                for state in np.arange(Nstates):
-                    name                  = 'Mg{}'.format(IonState[state])         # chemical element name
-                    States[name]          = {}
-                    States[name]["Lines"] = self.LineSeries(name)
-
-            
-            Parameters[element] = {'Weight':weight, 'Nstates':Nstates, 'States':States}
-            
-        return Parameters
-
-    def LineSeries(self, Identifier):
-       # read Lyman series from atom.dat
-        fname = self.atomdat
-        with open(fname) as fp:
-            line     = fp.readline()
-            Wave     = []
-            Fvalue   = []
-            while line:
-                line    = fp.readline()
-                if re.search(Identifier, line):
-                    vals    = self.rx.findall(line)
-                    vals    = np.asarray(vals, float)
-                    Wave.append(vals[0])
-                    Fvalue.append(vals[1])
-        Result = {'Lambda0': Wave, 'f-value': Fvalue}
-        return Result
-    
-    def IonValues(self, ion_element=[('Hydrogen',' H I')]):
-        ''' extract physical parameters of this ion from the element class '''
-        elementpars = self.ElementParameters()
-        element,ion = ion_element
-        try:
-            weight  = elementpars[element]["Weight"]
-            lambda0 = elementpars[element]["States"][ion]["Lines"]["Lambda0"]
-            fvalue  = elementpars[element]["States"][ion]["Lines"]["f-value"]
-        except:
-            weight  = -1
-            lambda0 = -1
-            fvalue  = -1
-        return {"Weight": weight, 'Lambda0': lambda0, "f-value":fvalue}
-
-
-    def HILymanSeries(self):
-        # read Lyman series from atom.dat
-        with open(fname) as fp:
-            line     = fp.readline()
-            Wave     = []
-            Fvalue   = []
-            while line:
-                line    = fp.readline()
-                if re.search('H I ', line):
-                    vals    = self.rx.findall(line)
-                    vals    = np.asarray(vals, float)
-                    Wave.append(vals[0])
-                    Fvalue.append(vals[1])
-        Result = {'Lambda0': Wave, 'f-value': Fvalue}
-
-        return Result
-    
+            parameters[element] = {'Weight':weight, 'Nstates':nstates, 'States':states}
+        atomfile.close()            
+        return parameters                            
+ 
+     
     def Plot(self, ElementNames=ElementNames):
         # plot all transitions used
         elementnames = ElementNames

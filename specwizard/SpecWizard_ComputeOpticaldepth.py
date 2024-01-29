@@ -80,8 +80,19 @@ class ComputeOpticaldepth:
                     temp_array               = np.zeros_like(extended_vel_kms)
                     #nnpix = len(projectionIW[ion][key]['Value'])
                     
-                    temp_array[start_indx:start_indx+npix]  = projectionIW[ion][key]['Value']
+                    temp_array[start_indx:start_indx+npix]  = projectionIW[ion][key]['Value'].copy()
                     projectionIW[ion][key]['Value'] = temp_array
+
+            if 'SimIon-weighted' in projection["Projection"].keys():
+                projectionSimIon = projection["Projection"]['SimIon-weighted']
+                for ion in projectionSimIon.keys():
+                    for key in ['Densities', 'Velocities', 'Temperatures']:
+                        temp_array               = np.zeros_like(extended_vel_kms)
+                        #nnpix = len(projectionIW[ion][key]['Value'])
+                        
+                        temp_array[start_indx:start_indx+npix]  = projectionSimIon[ion][key]['Value'].copy()
+                        projectionSimIon[ion][key]['Value'] = temp_array
+
             sightparams['vel_kms']   = extended_vel_kms
             sightparams['sight_kms'] = extended_vel_kms.max()
                         
@@ -102,6 +113,8 @@ class ComputeOpticaldepth:
         
         try:
             projectionSIW = projection["Projection"]['SimIon-weighted']
+            if extend["extend"]:
+                projectionSIW = projectionSimIon
             SimIons       = list(projectionSIW.keys())
             DoSimIons     = True
         except:

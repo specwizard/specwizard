@@ -344,15 +344,16 @@ class InputFunctions:
             Abundances = particles['Abundances']
             dens_cgs   = self.ToCGS(particles['Densities'])
             nH         = dens_cgs * Abundances['Hydrogen']['Value'] / constants['mH']
+
+            col_ions_formated = np.array([self.FormatTxt(col_ion) for col_ion in col_ions])
+            req_ions_formated = np.array([self.FormatTxt(ion) for _, ion in userions])
+            ions_we_have = np.where(np.intersect1d(col_ions_formated,req_ions_formated))[0]
             
-            for elements, ion in userions:
+            for elements, ion in np.array(userions)[ions_we_have]:
                 mass_e   =  elements_info[elements]['Weight'] * constants['amu']
                 ne       = dens_cgs * Abundances[elements]['Value'] / mass_e
                 ion_formated = self.FormatTxt(ion)
-                col_ions_formated = np.array([self.FormatTxt(col_ion) for col_ion in col_ions])
                 ions_indx = np.where(col_ions_formated==ion_formated)[0]
-                if len(ions_indx) ==0:
-                    continue
                 ionname   = str(col_ions[ions_indx][0])
                 IonFrac =  read_variable(varname = groupname + '/' + groupdic['IonFractions'] + '/'+ ionname)
                 IonFrac['Value'] = IonFrac['Value'] * (nH/ne)

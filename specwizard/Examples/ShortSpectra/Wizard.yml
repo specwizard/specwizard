@@ -34,7 +34,7 @@ ionparams:
         modify_particle: True
         ignore_particle: False
         Temperature [K]: 1.0E+4    # Putting the plus sign between E and the number is important to not be processed as a string. 
-    atomfile: ../../../atom_dat.hdf5
+    atomfile: ../../atom_dat.hdf5
     
 ODParams:
     VelOffset_kms: 0

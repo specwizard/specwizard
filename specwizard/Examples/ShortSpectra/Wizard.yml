@@ -4,13 +4,14 @@
 
 file_type:
     
-    sim_type: eagle
+    sim_type: colibre
     snap_type: snapshot
     
 snapshot_params:
     
-    directory: /madfs/data/dc-syke1/Eagle/ScienceRuns/Planks1/L0050N1504/PE/RECALIBRATED/data/snapshot_012_z003p017/
-    file: snap_012_z003p017.0.hdf5
+    #directory: /madfs/data/dc-syke1/Eagle/ScienceRuns/Planks1/L0050N1504/PE/RECALIBRATED/data/snapshot_012_z003p017/
+    directory: /cosma8/data/dp004/dc-chai1/runs_july_aug_2023/XM2023_L12N752/
+    file: colibre_0002.hdf5
 
 sightline:
     ProjectionAxes: ['simx','simy','simz']

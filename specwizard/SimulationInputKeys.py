@@ -114,15 +114,15 @@ def get_simkeys(sim_name='eagle'):
 
     sym_keys['colibre']['snapshot'] = {'elementnames'     : elementnames_swift,
                                'groupname'              : 'PartType0',
-                               'ElementAbundance'       : 'ElementMassFractionsInGas',
+                               'ElementAbundance'       : 'ElementMassFractions',
                                'Densities'              : 'Densities',
                                'SmoothingLengths'       : 'SmoothingLengths',
                                'Masses'                 : 'Masses',
                                'Positions'              : 'Coordinates',
                                'Velocities'             : 'Velocities',
                                'Temperatures'           : 'Temperatures',
-                               'Metallicities'          : 'metal_mass_fractions',
-                               'StarFormationRate'      : 'star_formation_rates',
+                               'Metallicities'          : 'MetalMassFractions',
+                               'StarFormationRate'      : 'StarFormationRates',
                                'IonFractions'           : 'SpeciesFractions'}
     
 

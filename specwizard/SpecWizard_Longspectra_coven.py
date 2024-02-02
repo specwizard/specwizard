@@ -27,6 +27,8 @@ class LongSpectra:
         self.z_qsr      = wizard['longspectra']['z_qsr']
         self.delta_z    = wizard['longspectra']['delta_z']
         self.file_dir   = wizard['longspectra']['file_dir']
+        self.all_contaminants = wizard['longspectra']['all_contaminants']
+
         self.pixkms     = 1
         self.npix       = int((self.lambda_max-self.lambda_min)/self.dlambda)
         self.wavelength =  self.lambda_min + (np.arange(self.npix) * self.dlambda) 
@@ -91,10 +93,14 @@ class LongSpectra:
         cont_contrib_ions = np.unique([self.lambda0_dic[key]['ion'] for key in self.contaminant_lambda0s])
 
         for element,ion in ions_we_want:
-            if ion in cont_contrib_ions:
-                ions2do.append((element,ion))
-            else:
-                print(ion, "Does  not contribute in this wavelength range.")
+            sim_name = self.wizard['file_type']['sim_type']
+            elements_in_sim = Skeys.get_simkeys(sim_name=sim_name)['snapshot']['elementnames']
+            if element in elements_in_sim:
+                if ion in cont_contrib_ions:
+                    ions2do.append((element,ion))
+                else:
+                    if not self.all_contaminants:
+                        print(ion, "Does  not contribute in this wavelength range.")
 
         return ions2do
     def get_z_from_files(self,los_files):
@@ -316,10 +322,18 @@ class LongSpectra:
         if not random_los:
             print("not using random los") 
             rd.seed(42)
-      
+        self.contaminant_lambda0()
+
         while z<z_qsr:
             print('Doing z: ',z)
-            # We get choose randomly or not, a file and a los that is within dz 
+            # We get choose randomly or not, a file and a los that is within dz
+            ions_we_want     = wizard['ionparams']['Ions']
+            if self.all_contaminants:
+                ions_we_want = wizard['ionparams']['ions-available']
+
+            ions2do = self.check_if_ion_contaminates(ions_we_want)
+            self.wizard['ionparams']['Ions'] = ions2do
+ 
             los_dict = self.get_file_and_los(z,random=False)
 
             #This means it did not found a file for the current z 
@@ -391,6 +405,8 @@ class LongSpectra:
 
         wizard = coven[0]
         ions_we_want     = wizard['ionparams']['Ions']
+        if self.all_contaminants:
+            ions_we_want = wizard['ionparams']['ions-available']
 
         ions2do = self.check_if_ion_contaminates(ions_we_want)
         long_spectra   = {}
@@ -407,6 +423,7 @@ class LongSpectra:
             long_spectra['Ions'][ions]["f-value"]= 0
 
         for wizard in coven:
+            wizard['ionparams']['Ions']=ions2do
             print("reading file: ", wizard['snapshot_params']['file'])
             
             snapshot  = ReadData(wizard = wizard)

@@ -26,7 +26,7 @@ ionparams:
     table_type: specwizard_cloudy
     iondir: /cosma/home/dp004/dc-aram1/workdir7/pyspecwizard_main/spwtables/HM12/
     fname: null
-    ions: [['Hydrogen', 'H I'],['Helium','He II'],['Carbon','C III'],['Carbon','C IV'],['Oxygen','O VI'],['Silicon','Si IV']]
+    ions: [['Hydrogen', 'H I'],['Helium','He II'],['Carbon','C III'],['Carbon','C IV'],['Oxygen','O VI'],['Silicon','Si IV'],['Silicon','Si VI']]
     SFR_properties:
         modify_particle: True
         ignore_particle: False
@@ -46,6 +46,7 @@ LongSpectra:
     dlambda: 0.5
     z_qsr: 3.2
     delta_z: 0.1
+    all_contaminants: True
     #file_dir: ./eagle_los/
     file_dir: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/los/ #./Analisis/long_los/ #s
     

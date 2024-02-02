@@ -46,7 +46,8 @@ class IonTables:
         iontable_info = self.iontable_info
         if iontable_info["table_type"] == 'specwizard_cloudy':
             # check whether ion exists
-            if not ion in iontable_info['ions-available']:
+            ion_available_names = np.array([ion for _,ion in iontable_info['ions-available']])
+            if not ion in ion_available_names:
                 print("Ion",ion," is not found")
                 sys.exit(-1)
             fname = iontable_info['iondir'] + '/' + ion + '.hdf5'

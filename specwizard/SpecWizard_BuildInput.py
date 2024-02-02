@@ -9,6 +9,7 @@ from SpecWizard_Elements import Elements
 from SpecWizard_IonTables import IonTables
 import yaml
 import traceback
+import mendeleev
 
 
 class Build_Input:
@@ -241,7 +242,15 @@ class Build_Input:
             try:
                 iondir = iondir + '/'
                 files = os.listdir(iondir)
-                ions_available = [file.split('.')[0] for file in files]
+                ions_list_avail = [file.split('.')[0] for file in files]
+
+                for ion in ions_list_avail:
+                    if ' ' in ion:
+                        separeted = ion.split(" ")
+                        el_short  = separeted[0]
+                        el_full_name = getattr(mendeleev,el_short).name
+                        ions_available.append((el_full_name,ion))
+
             except:
                 print("No ionization tables found in directory {}".format(iondir))
                 ions_available = []
@@ -254,6 +263,15 @@ class Build_Input:
                     sys.exit(-1)
                 hf = h5py.File(file, "r")
                 elements = np.array(hf['ElementNamesShort'][...], dtype='str')
+
+                key_names = list(hf['Tdep/IonFractions'].keys())
+                for short,key in zip(elements,key_names):
+                    el_name = getattr(mendeleev,short).name
+                    n_ions = np.shape(hf['Tdep/IonFractions'][key])[-1]
+                    for i in range(1,n_ions+1):
+                        rom_num = IonTables.RomanNumeral(None,i)
+                        ion_format = short+' '+rom_num
+                        ions_available.append((el_name,ion_format))
                 hf.close()
             except:
                 print("iondir = ", iondir)
@@ -328,7 +346,7 @@ class Build_Input:
                                        'Veloffset': VelOffset_kms,
                                        'VoigtOff': VoigtOff}
 
-    def SetLongSpectraParams(self, lambda_min=945., lambda_max=8000., dlambda=0.5, z_qsr=3.0, delta_z=0.01, file_dir=''):
+    def SetLongSpectraParams(self, lambda_min=945., lambda_max=8000., dlambda=0.5, z_qsr=3.0, delta_z=0.01, file_dir='',all_contaminants=False):
         """
         Set the parameters for the long spectra.
 
@@ -350,7 +368,8 @@ class Build_Input:
                                           'dlambda': dlambda,
                                           'z_qsr': z_qsr,
                                           'delta_z': delta_z,
-                                          'file_dir': file_dir}
+                                          'file_dir': file_dir,
+                                          'all_contaminants': all_contaminants}
 
     def ExtraParams(self, periodic=True, kernel="Gauss", pixkms=1, veloff=0,
                     ReadIonFrac={'ReadIonFrac': False,
@@ -473,8 +492,10 @@ class Build_Input:
             z_qsr = wizard_yml['LongSpectra']['z_qsr']
             delta_z = wizard_yml['LongSpectra']['delta_z']
             file_dir = wizard_yml['LongSpectra']['file_dir']
+            all_contaminants = wizard_yml['LongSpectra']['all_contaminants']
+
             self.SetLongSpectraParams(lambda_min=lambda_min, lambda_max=lambda_max, dlambda=dlambda, z_qsr=z_qsr,
-                                      delta_z=delta_z, file_dir=file_dir)
+                                        delta_z=delta_z, file_dir=file_dir,all_contaminants=all_contaminants)
         except:
             pass
 

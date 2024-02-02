@@ -27,9 +27,10 @@ ionparams:
     table_type: Ploeckinger 
     iondir: /cosma7/data/dp004/dc-aram1/pyspecwizard_main/sylviatables/
     fname: UVB_dust1_CR1_G1_shield1.hdf5
-   # table_type: specwizard_cloudy
-   # iondir: /cosma7/data/Eagle/SpecWizardCloudytables/HM12/
-   # fname: null
+#    table_type: specwizard_cloudy
+#    iondir: /cosma7/data/Eagle/SpecWizardCloudytables/HM12/
+#    iondir: /cosma/home/dp004/dc-aram1/workdir7/pyspecwizard_main/spwtables/HM12/
+#    fname: null
     ions: [['Hydrogen', 'H I'],['Helium','He II'],['Carbon','C III'],['Carbon','C IV'],['Oxygen','O II'],['Oxygen','O III']]
     SFR_properties:
         modify_particle: True

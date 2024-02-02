@@ -22,7 +22,7 @@ class Elements:
     """
     
     def __init__(self, 
-                 atomfile="atome_dat.hdf5"):
+                 atomfile="atom_dat.hdf5"):
         
         # file containing physical parameters of ions and elements
         self.atomdat       = atomfile

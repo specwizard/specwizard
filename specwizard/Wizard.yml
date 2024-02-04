@@ -26,7 +26,7 @@ ionparams:
     table_type: specwizard_cloudy
     iondir: /cosma/home/dp004/dc-aram1/workdir7/pyspecwizard_main/spwtables/HM12/
     fname: null
-    ions: [['Hydrogen', 'H I'],['Helium','He II'],['Carbon','C III'],['Carbon','C IV'],['Oxygen','O VI'],['Silicon','Si IV'],['Silicon','Si VI']]
+    ions: [['Hydrogen', 'H I'],['Helium','He II'],['Carbon','C III'],['Carbon','C IV'],['Oxygen','O VI'],['Silicon','Si IV']]
     SFR_properties:
         modify_particle: True
         ignore_particle: False

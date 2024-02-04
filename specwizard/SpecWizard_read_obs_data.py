@@ -80,7 +80,45 @@ class read_obs_data():
                     ax.legend()
         
         return kim2020_dic 
-    
+    def Day19(self,filename='Day19.csv'):
+
+        # power spectrum at z=3.13 from Day19
+
+        filename  = self.datapath+filename
+        data      = np.loadtxt(filename, delimiter=",", comments='#', ).T
+        x         = np.array(data[0,:])
+        y         = np.array(data[1,:])
+        nx        = int(len(x)/2)
+        logk      = x[0:nx]
+        Pmin      = y[0:nx]
+        logkm     = x[nx:]
+        Pmax      = y[nx:]
+        Pmean     = 0.5*(Pmin+Pmax)
+        LogVar    = logk + Pmean - np.log10(np.pi)
+        Min       = logk + Pmin  - np.log10(np.pi)
+        Max       = logk + Pmax  - np.log10(np.pi)
+        info      = 'Power spectrum at z=3.13 from Day19'
+        Day19     = {'logk':logk, 'logVar':LogVar, 'Min':Min, 'Max':Max, 'LogP': Pmean, 'LogPmin':Pmin, 'LogPmax':Pmax,'info':info}
+        return Day19
+
+
+    def Walther18(self,filename='Walther18.csv'):
+        ## power spectrum from Walther at z=3.0
+        filename  = self.datapath+filename
+
+        data      = np.loadtxt(filename, delimiter=",", comments='#', ).T
+        x         = np.array(data[0,:])
+        y         = np.array(data[1,:])
+        nx        = int(len(x)/2)
+        logk      = x[0:nx]
+        Pmin      = y[0:nx]
+        logkm     = x[nx:]
+        Pmax      = y[nx:]
+        Pmean     = 0.5*(Pmin+Pmax)
+        info      = ' power spectrum from Walther at z=3.0'
+        Walther18 = {'logk':logk, 'logVar':Pmean, 'Min':Pmin, 'Max':Pmax,'info':info}
+        return Walther18
+
     def VidIrsic_2017(self,filename='VidIrsic2017_data',plot=False):
         
         VidIrsic2017_data = h5py.File(self.datapath+filename+".hdf5",'r')

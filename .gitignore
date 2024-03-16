@@ -4,15 +4,26 @@
 *.pyc
 /specwizard/Analisis/
 /specwizard/data/
+/specwizard/HM12Tables/
+/specwizard/HM05Tables/
+/specwizard/HM01Tables/
 /specwizard/__pycache__/
 /specwizard/*.ipynb
+/specwizard/.ipynb_checkpoints/
 !/specwizard/Galaxy_metals-example.ipynb
+!/specwizard/atom_dat.hdf5
+/specwizard/Examples/IO/*.hdf5
+/specwizard/Examples/IO/Multiple redshifts/*.hdf5
+/specwizard/Examples/GalaxyMetals/*.hdf5
 /specwizard/*.pdf
 /specwizard/*.png
 /specwizard/*.hdf5
 /specwizard/*.h5
+/specwizard/*.jpg
+/specwizard/*.pickle
 /specwizard/*.txt
 /specwizard/*_old.py
 /specwizard/*_test.py
 /specwizard/*_alotoffunctions.py
-
+.ipynb_checkpoints
+/specwizard/eagle_los/part_los_z2.832.hdf5

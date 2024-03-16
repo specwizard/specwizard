@@ -194,6 +194,27 @@ class OpticalDepth_IO:
             for variable in variables:
                 self.WriteVariable(projection["Ion-weighted"][ion][variable], 
                                    group+'/' + variable)
+            # check for simIon 
+            if 'SimIon-weighted' in projection.keys():
+                if ion in projection['SimIon-weighted'].keys():
+                    group = groupname + '/' + element + '/' + ion + '/SimIon-weighted'
+                    hfile.require_group(group)
+                    
+                # add attributes
+                    for(key, value) in projection.items():
+                        try:
+                            hfile[group].attrs[key] = value
+                        except:
+                            continue
+                        pix_kms = group + '/' + 'pixel_kms'
+                        self.WriteVariable(projection["pixel_kms"], varname = pix_kms)
+                    
+                    # add ion-weighted variables
+                    for variable in variables:
+                        self.WriteVariable(projection["SimIon-weighted"][ion][variable], 
+                                        group+'/' + variable)
+                
+
             
             # optical depth-weighted properties
             group = groupname + '/' + element + '/' + ion + '/optical depth-weighted'
@@ -218,7 +239,15 @@ class OpticalDepth_IO:
             info     = {'Vardescription':'transition strength', 'CGSConvertsionFactor':1, 'h-scale-exponent':0, 'aexp-scale-exponent':0}
             variable = {'Value': fvalue, 'Info':info}    
             self.WriteVariable(variable, varname = group + '/f-value')            
- 
+            # check for simions
+            if 'SimIons' in opticaldepth.keys():
+                if transition in opticaldepth['SimIons'].keys():
+                    for variable in variables:
+                        self.WriteVariable(opticaldepth['SimIons'][transition][variable], 
+                                group+'/SimIons/' + variable)
+                    self.WriteVariable(opticaldepth['SimIons'][transition]['Optical depths'], 
+                            group+'/SimIons'+'/Optical depths')
+
             # add optical dept-weighted variables
             for variable in variables:
                 self.WriteVariable(opticaldepth[transition][variable], 

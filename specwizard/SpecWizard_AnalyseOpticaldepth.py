@@ -317,7 +317,7 @@ class Analyse_Opticaldepth:
         pwr_spec *= V
 
         # Calculate dimensionless flux power spectra
-        kPS = pwr_spec * freqs
+        kPS = pwr_spec * freqs / np.pi
 
         return freqs, kPS
 
@@ -355,7 +355,7 @@ class Analyse_Opticaldepth:
             return True
         else:
             return False
-    def Convolve(self,spectrum, FWHM):
+    def Convolve(self,flux, FWHM):
         ''' Convolve the spectrum with instrumental broadining
          Input: 
            -spectrum: dictionary, containing
@@ -365,16 +365,21 @@ class Analyse_Opticaldepth:
            -FWHM:       full-width at half maximum of the Gaussian line-spread function
         Output: the convolved spectrum in the form of a dictionary
         '''
-        wave = spectrum["wave"]
+        
+#        wave = spectrum["wave"]
+        wave = self.vHubble
+        L    = wave[-1]
         dx   = wave[1:] - wave[0:-1]
-        dx   = np.concatenate([dx, [spectrum['L']-wave[-1]]])
+#        dx   = np.concatenate([dx, [spectrum['L']-wave[-1]]])
+        dx   = np.concatenate([dx, [L-wave[-1]]])
+
         wave = wave + 0.5 * dx
-        flux = spectrum["flux"]
+#        flux = spectrum["flux"]
 
         # create Gaussian
         sigmaG    = FWHM / (2*np.log(2))  # Gaussian's standard deviation
         n         = len(wave)
-        if even(n):
+        if self.even(n):
             nc = np.int(n/2-1)
         else:
             nc = np.int((n+1)/2)-1
@@ -384,7 +389,8 @@ class Analyse_Opticaldepth:
         convolved = convolve(flux, Gauss, mode='same') / np.sum(Gauss)
         # convolved = flux
         #
-        newspectrum = spectrum.copy()
+        newspectrum = {}
+        newspectrum["wave"] = wave
         newspectrum["flux"] = convolved
         newspectrum["FWHM"] = FWHM
         return newspectrum

@@ -204,7 +204,7 @@ class Build_Input:
     def SetIonTableParams(self, table_type='specwizard_cloudy', iondir='/cosma7/data/Eagle/SpecWizardCloudytables/HM12/',
                           fname='', ions=[('Hydrogen', 'H I')],
                           SFR_properties={'modify_particle': True, 'ignore_particle': True, 'Temperature [K]': 1e4},
-                          atomfile='./VpFit/atom.dat'):
+                          atomfile='./atom_dat.hdf5'):
         """
         Set the ion to use to calculate the spectra, the ionization tables to use for the calculation of the ion fractions,
         and how to deal with star forming particles.
@@ -227,7 +227,7 @@ class Build_Input:
 
         # Available ionization tables
         ions_available = []
-        table_types = ['specwizard_cloudy', 'ploeckinger']
+        table_types = ['specwizard_cloudy', 'ploeckinger','cloudy_hm01']
 
         # Convert table_type to lowercase for case-insensitive comparison
         table_type = table_type.lower()

@@ -192,7 +192,7 @@ class Lines:
             dv         = 1e-3                   # pixel size in km/s
             vmin       = np.min(self.v_kms)
             vmax       = np.max(self.v_kms)
-            nbins      = np.int((vmax-vmin)/dv)
+            nbins      = np.array((vmax-vmin)/dv,dtype=int)
             dv         = (vmax-vmin)/float(nbins)
             v_convolve = vmin + np.arange(nbins) * dv 
 

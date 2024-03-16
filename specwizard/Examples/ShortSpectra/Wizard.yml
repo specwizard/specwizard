@@ -15,7 +15,7 @@ snapshot_params:
 
 sightline:
     ProjectionAxes: ['simx','simy','simz']
-    ProjectionStart: [0.4120055,0.2248949,0]
+    ProjectionStart: [0.125,0.4248949,0]
     ProjectionLength: 1
     SightLength: null
     ProjectionExtend:

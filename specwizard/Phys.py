@@ -1,5 +1,17 @@
+# def ReadPhys():
+#     import json
+#     with open('Phys.data', 'r') as f: 
+#         x = json.load(f)
+#     return x
+
 def ReadPhys():
-    import json
-    with open('Phys.data', 'r') as f: 
-        x = json.load(f)
-    return x
+    phys_dic = {"c": 29979245800.0, "Grav": 6.674079999999999e-08, "mH": 1.672621898e-24, "me": 9.10938356e-28,
+                "amu": 1.66053904e-24, "Y": 0.248, "planck": 6.62607004e-27, "kB": 1.38064852e-16,
+                "sigma": 6.63e-18, "sigmaT": 6.6524587158e-25, "alphaB": 3.334168827340852e-13, 
+                "eps0": 0.07957747154594767, "e": 4.80320467299766e-10, "GMsun": 1.3271244e+26, 
+                "Msun": 1.9884754153381438e+33, "pc": 3.0856775814913674e+18, "kpc": 3.0856775814913673e+21,
+                "Mpc": 3.0856775814913676e+24, "micron": 0.0001, "yr": 31557600.0, "H100": 3.2407792894443648e-18, 
+                "eV": 1.6021766208000001e-12, "Ryd": 2.1798723253902544e-11,
+                "ElementSolarMassFractions":{"info":"From Wiersma et al. 2009","H":0.7065,"He":0.2806,"C":2.07e-3,
+                                             "N":8.36e-4,"O":5.49e-3,"Ne":1.41e-3,"Mg":5.91e-4,"Si":6.83e-4,"S":4.09e-4,"Ca":6.44e-5,"Fe":1.10e-3}}
+    return phys_dic

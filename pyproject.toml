@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "specwizard"
-version = "0.0.1"
+version = "0.9.0"
 authors = [
     { name="Andres Aramburo-Garcia", email="aramburo@lorentz.leidenuniv.nl" },{name = "Tom Theuns", email = "tom.theuns@durham.ac.uk"},
 ]
@@ -19,6 +19,16 @@ classifiers = [
 dependencies = [
     "numpy",
     "scipy",
+    "swiftsimio",
+    "mendeleev",
+    "roman",
+    "swiftsimio",
+    "pyread_eagle",
+    "matplotlib",
+    "hydrangea",
+    "bs4",
+    "yaml",
+    "h5py"
 ]
 
 [project.urls]

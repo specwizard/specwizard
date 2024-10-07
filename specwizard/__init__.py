@@ -1,1 +1,1 @@
-from .specwizard import Specwizard
+from .specwizard import *

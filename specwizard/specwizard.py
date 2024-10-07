@@ -1,7 +1,7 @@
-from SpecWizard_BuildInput import Build_Input
-from SpecWizard_Input import ReadData
-from SpecWizard_ProjectData import SightLineProjection
-from SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
+from .SpecWizard_BuildInput import Build_Input
+from .SpecWizard_Input import ReadData
+from .SpecWizard_ProjectData import SightLineProjection
+from .SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
 
 
 #class SpecWizard:

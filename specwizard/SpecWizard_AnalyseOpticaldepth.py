@@ -4,9 +4,9 @@ import random
 from scipy.integrate import cumtrapz, simps
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
-import Phys
+from .Phys import ReadPhys
 
-constants = Phys.ReadPhys()
+constants = ReadPhys()
 
 specfile = 'spectra_part_los_z3.027.hdf5'
 specdir  = 'path/for/specwizard/output.hdf5'

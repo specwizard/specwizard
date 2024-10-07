@@ -1,20 +1,22 @@
 
 import numpy as np
 import h5py
-from SpecWizard_BuildInput import Build_Input
-from scipy.interpolate import interp1d
-import SimulationInputKeys
-import SimulationInputKeys as Skeys
 import os
-from SpecWizard_Elements import Elements
-from SpecWizard_Input import ReadData
-from SpecWizard_ProjectData import SightLineProjection
-import Phys
-constants = Phys.ReadPhys()
-from SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
 import random as rd
 import copy
-from SpecWizard_Lines import Lines
+
+from scipy.interpolate import interp1d
+from .SpecWizard_BuildInput import Build_Input
+import .SimulationInputKeys
+import .SimulationInputKeys as Skeys
+
+from .SpecWizard_Elements import Elements
+from .SpecWizard_Input import ReadData
+from .SpecWizard_ProjectData import SightLineProjection
+from .Phys import ReadPhys
+constants = ReadPhys()
+from .SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
+from .SpecWizard_Lines import Lines
 
 class LongSpectra:
     

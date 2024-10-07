@@ -1,14 +1,12 @@
 # %load SpecWizard_Lines_tom.py
 import numpy as np
-import Phys
-constants = Phys.ReadPhys()
-#
+import scipy.interpolate as interpolate
 from scipy.signal import convolve
 from scipy.special import erf
 from astropy.modeling.functional_models import Voigt1D
 from scipy.special import voigt_profile as VoigtSciPy
-import scipy.interpolate as interpolate
-
+from .Phys import ReadPhys
+constants = ReadPhys()
 # convolve(in1, in2, mode='full', method='auto')[source]
 class Lines:
     ''' Methods to compute optical depth as a function of velocity for a single absorber,

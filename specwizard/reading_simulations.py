@@ -1,16 +1,16 @@
 import h5py 
 import glob
-import Phys
+from .Phys import ReadPhys
 import re
 import numpy as np
 import swiftsimio as sw
 import pyread_eagle as read_eagle
 import hydrangea as hy
-from SimulationInputKeys import get_simkeys
-from SpecWizard_Elements import Elements
+from .SimulationInputKeys import get_simkeys
+from .SpecWizard_Elements import Elements
 
 # physical constants in cgs units
-constants = Phys.ReadPhys()
+constants = ReadPhys()
 
 class InputFunctions:
     

@@ -1,11 +1,10 @@
 # Required libraries
-import importlib
 import numpy as np
 import re
 import mendeleev
-from SpecWizard_Elements import Elements
 import h5py
 import scipy.interpolate as interpolate
+from .SpecWizard_Elements import Elements
 
 elements  = [('Hydrogen',mendeleev.H.atomic_weight,'H0+'), ('Helium',mendeleev.He.atomic_weight,'He1+')]
 iondir    = './HM12Tables'

@@ -1,6 +1,5 @@
 fontsize     = 20
 # Required libraries
-import importlib
 import numpy as np
 import re
 import mendeleev

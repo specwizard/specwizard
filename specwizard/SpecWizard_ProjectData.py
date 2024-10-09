@@ -7,7 +7,7 @@ from .SpecWizard_Elements import Elements
 from .SpecWizard_IonizationBalance import IonizationBalance
 from .SpecWizard_SplineInterpolation import ColumnTable
 from .SpecWizard_SplineInterpolation import Bspline, TGauss
-from .SpecWizard_IonTables_test import IonTables
+from .SpecWizard_IonTables import IonTables
 #
 from .Phys import ReadPhys
 constants = ReadPhys()

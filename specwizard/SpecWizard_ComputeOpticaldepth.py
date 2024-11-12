@@ -13,7 +13,7 @@ class ComputeOpticaldepth:
     Args:
         sightlineprojection (dict): A dictionary containing parameters related to the sight line projection.
     '''
-    def __init__(self, sightlineprojection):
+    def _git_init__(self, sightlineprojection):
         '''
         Initializes the ComputeOpticaldepth class with the provided sight line projection.
 
@@ -41,7 +41,7 @@ class ComputeOpticaldepth:
         self.transitions = self.specparams["ionparams"]["transitionparams"]
         
         # Read physical constants
-        self.constants  = Phys.ReadPhys()
+        self.constants  = constants#Phys.ReadPhys()
         
         # Flags for various effects physical effects of the optical depth. 
         self.ThermEff   = self.specparams['ODParams']['ThermalEffectsOff']

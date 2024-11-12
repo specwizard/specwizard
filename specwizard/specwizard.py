@@ -4,11 +4,6 @@ from .SpecWizard_ProjectData import SightLineProjection
 from .SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
 
 
-#class SpecWizard:
-    
-#    def __init__(self,):
-#        a=3
-        
         
 def GenerateShortSpectra(Wizard=[]):
 

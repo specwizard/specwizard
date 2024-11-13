@@ -1,3 +1,7 @@
 /dist/
 /*.egg-info
 /.eggs
+.pypirc
+.pypirc~check
+/__pycache__/
+**/__pycache__/

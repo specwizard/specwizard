@@ -28,7 +28,8 @@ dependencies = [
     "hydrangea",
     "bs4",
     "yaml",
-    "h5py"
+    "h5py",
+    "astropy"
 ]
 
 [project.urls]

@@ -6,8 +6,6 @@ SPECWIZARD is a python package to compute and analyze mock quasar absorption spe
 
 
 
-
-
 Citing SPECWIZARD
 --------------
 

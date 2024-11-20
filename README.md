@@ -1,5 +1,22 @@
-### Hi there 👋
+Overview
+========
 
+.. INTRO_START_LABEL
+
+SPECWIZARD is a python package to compute and analyze mock quasar absorption spectra from cosmological simulations. 
+
+.. INTRO_END_LABEL
+
+Full documentation_ can be found on ReadTheDocs.
+
+.. _documentation: https://specwizard.readthedocs.io/en/latest/
+
+Citing SPECWIZARD
+--------------
+
+
+Installation Notes
+==================
 <!--
 **specwizard/specwizard** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 

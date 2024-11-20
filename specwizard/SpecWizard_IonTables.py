@@ -12,39 +12,40 @@ import scipy.interpolate as interpolate
 
 class IonTables:
     """
-    This class reads and interpolates the ionization tables that will be used for the calculation of ion fractions. 
+    Reads and interpolates ionization tables for calculating ion fractions.
 
-    Parameters
-    ----------
-
-    specparams : dictionary
-        The Wizard dictionary produced by the BuildInput routine. 
+    Attributes:
+        specparams (dict): Wizard dictionary produced by the `BuildInput` routine.
+        iontable_info (dict): Metadata and configuration for the ionization tables.
     """
 
     def __init__(self, specparams = None):
+        """
+        Initializes the IonTables class.
+
+        Args:
+            specparams (dict): Dictionary containing parameters, including the ionization table configuration.
+        """        
         self.specparams   = specparams
         self.iontable_info = specparams['ionparams']
         
     def ReadIonizationTable(self, ion='H I'):
         
         """
-        This will read the ionization tables for the interpolation. The specifics of the table (path,type) are provided by
-        initializing the class by providing the output from the Build_Input.
-	
-	Parameters
-	----------
-        
-        ion : str
-	      Name of ion to be calculated e.g 'HeII'
+        Reads the ionization table for the specified ion.
 
-	Returns
-	-------
-        
-	out : tuple
-		tuple with the contents of the ionization table for that ion.
-                if 'specwizard_cloudy' -> ((redshift,Log_temperature,Log_nH),Log_Abundance)
-                if 'ploeckinger'       -> ((redshift,Log_temperature,Log_(Z/Zsol),Log_nH),Log_Abundance)
-        """     
+        Args:
+            ion (str): Name of the ion to be calculated, e.g., 'HeII'.
+
+        Returns:
+            tuple: Ionization table contents.
+                - If `table_type` is 'specwizard_cloudy': ((redshift, Log_temperature, Log_nH), Log_Abundance).
+                - If `table_type` is 'ploeckinger': ((redshift, Log_temperature, Log_(Z/Zsol), Log_nH), Log_Abundance).
+
+        Raises:
+            FileNotFoundError: If the required ionization table file does not exist.
+            ValueError: If the ion is not available in the table configuration.
+        """
         iontable_info = self.iontable_info
         if iontable_info["table_type"] == 'specwizard_cloudy':
             # check whether ion exists
@@ -133,20 +134,13 @@ class IonTables:
             return ((z, LogT, LognH), LogAbundance)
     def RomanNumeral(self, i):
         """
-        Converts decimal to roman numerals . 
+        Converts a decimal number to a Roman numeral.
 
-        Parameters
-	----------
+        Args:
+            i (int): Decimal number.
 
-        i : int
-	Decimal number
-
-	Returns
-	-------
-	
-        out : str
-        Roman string e.g 'IV'
-         
+        Returns:
+            str: Roman numeral representation.
         """
         result = ''
         # number of Xs
@@ -172,56 +166,36 @@ class IonTables:
     
     def SetLimitRange(self,values,min_val,max_val):
         """
-        Set values < min_val to min_val and values > min_max to max_val. This to avoid extrapolation. 
+        Clamps values to a specified range.
 
-        Parameters
-        ----------
+        Args:
+            values (np.ndarray): Array of values to limit.
+            min_val (float): Minimum allowed value.
+            max_val (float): Maximum allowed value.
 
-        values : np.array(float)
-            Array with the values we want to limit
-
-        min_val : float 
-            Minimal value range set by the table. 
-
-        max_val : float 
-            Maximal value range set by the table. 
-
-        Returns 
-        -------
-        out : np.array(float)
-            array with values bounded by the table.  
-	"""
+        Returns:
+            np.ndarray: Array with values limited to the specified range.
+        """
         values[values<min_val] = min_val
         values[values>max_val] = max_val
         return values
     
     def IonAbundance(self, redshift=None, nH_density=None, temperature=None, metal_fraction=None, ion = None):
-        """ 
-	Return the fractional abundance of a given ion. This done by interpolation of the ionization tables with particle data from simulations. 
- 	             
-        Parameters
-	----------
+        """
+        Computes the fractional abundance of a specified ion.
 
-        redshift     : float
-        Redshift of the particles. 
+        Args:
+            redshift (float): Redshift of the particles.
+            nH_density (float): Proper hydrogen density (particles/cm³).
+            temperature (float): Gas temperature in Kelvin.
+            metal_fraction (float): Total metallicity of the particles (for 'ploeckinger' tables).
+            ion (str): Name of the ion (e.g., 'H I').
 
-        density:     : float
-	Proper hydrogen density of gas  particles in $\mathrm{cm}^{-3}$
+        Returns:
+            float: Ion fraction (log10 n_ion / n_element).
 
-        temperature  : float 
-	Temperature of  gas particles in $\mathrm{K}$
-
-        metal_fraction  : float
-	Total metallicity of the particles (only used for ploeckinger tables)
-          
-	ionname      : str
-	Name of ion,e.g. 'H I' for neutral hydrogen
-
-	Returns
-	-------
-
-        out : float
-	Ion fraction $\log_{10} \mathrm{n_{ion}/n_{element}}$
+        Raises:
+            ValueError: If required data is missing or interpolation fails.
         """
         iontable_info = self.iontable_info
 

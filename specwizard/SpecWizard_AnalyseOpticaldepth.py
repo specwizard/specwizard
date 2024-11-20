@@ -248,7 +248,15 @@ class Analyse_Opticaldepth:
         return -1*A0*(1+z)**alpha
             
     def kim2007_TauFit(self,z):
-        ''' Power Law presented in Kim2007 '''
+        '''
+        Computes the effective optical depth (tau) using the power-law fit from Kim et al. 2007.
+
+        Args:
+            z (float): Redshift value (should be between 1.7 and 4).
+
+        Returns:
+            float: Computed optical depth.
+        '''
         if (z>1.7) and (z<4):
             A0    = 0.0023
             alpha = 3.65 
@@ -256,15 +264,15 @@ class Analyse_Opticaldepth:
         
 
     def specwizard_tau_fit(self, z):
-        """
-        Fit the effective optical depth (tau)
+        '''
+        Fits the effective optical depth (tau) for a given redshift using a cubic polynomial function.
 
         Args:
             z (float): Redshift value.
 
         Returns:
-            float: Computed effective optical depth (tau).
-        """
+            float: Computed effective optical depth.
+        '''
         # Coefficients for the fit function
         a0 = 0.04300355
         a0 = 0.05100355
@@ -288,19 +296,20 @@ class Analyse_Opticaldepth:
         return tau
 
     def flux_ps(self, flux, meanf, N=None, V=None):
-        """
-        Calculate dimensionless flux power spectra.
+        '''
+        Computes the dimensionless flux power spectrum.
 
         Args:
-            flux (numpy.ndarray): 1D array representing the input flux data.
-            meanf (float): Mean value of the flux data.
-            N (int, optional): Number of pixels. Defaults to None, in which case it uses self.npix.
-            V (float, optional): Box size in km/s. Defaults to None, in which case it uses self.box_kms.
+            flux (numpy.ndarray): 1D array representing flux data.
+            meanf (float): Mean flux value.
+            N (int, optional): Number of pixels. Defaults to self.npix if None.
+            V (float, optional): Box size in km/s. Defaults to self.box_kms if None.
 
         Returns:
-            Tuple (numpy.ndarray, numpy.ndarray): Tuple containing the frequency values and corresponding dimensionless flux power spectra.
-
-        """
+            tuple: A tuple containing:
+                - numpy.ndarray: Frequency values.
+                - numpy.ndarray: Dimensionless flux power spectrum.
+        '''
         # Set default values if not provided
         if N is None:
             N = self.npix
@@ -335,6 +344,18 @@ class Analyse_Opticaldepth:
 
     
     def bin_PS(self,kphys,kPk):
+        """
+        Bin the power spectrum data into logarithmic and custom bins for analysis.
+
+        Args:
+            kphys (numpy.ndarray): Physical wavenumber array.
+            kPk (list of numpy.ndarray): List containing power spectra for each wavenumber.
+
+        Returns:
+            Tuple (numpy.ndarray, numpy.ndarray): Tuple of binned central wavenumber values and the corresponding binned power spectrum values.
+        """
+
+
         kbins     = np.arange(np.log10(0.0005), np.log10(0.07), 0.2)
         ksmall    = [0.001, 0.005, 0.007, 0.009] 
         klarge    = 10**np.arange(-2, -1, 0.1)
@@ -362,21 +383,23 @@ class Analyse_Opticaldepth:
 
 
     def even(self,n):
+        
         # return true if input n is even, else returns false
         if (np.int(n/2)*2 == n):
             return True
         else:
             return False
     def Convolve(self,flux, FWHM):
-        ''' Convolve the spectrum with instrumental broadining
-         Input: 
-           -spectrum: dictionary, containing
-              -L:       linear extent of the array wavelength range
-              -wave:    wavelength or Hubble velocity
-              -flux:    flux
-           -FWHM:       full-width at half maximum of the Gaussian line-spread function
-        Output: the convolved spectrum in the form of a dictionary
-        '''
+        """
+        Convolve the input flux with a Gaussian line-spread function simulating instrumental broadening.
+
+        Args:
+            flux (numpy.ndarray): Array of flux values.
+            FWHM (float): Full-width at half maximum for the Gaussian broadening.
+
+        Returns:
+            dict: Dictionary containing the convolved flux, wavelength, and FWHM.
+        """
         
 #        wave = spectrum["wave"]
         wave = self.vHubble
@@ -409,15 +432,16 @@ class Analyse_Opticaldepth:
 
 
     def Rebin(self,spectrum, wave):
-        ''' rebin the function y(x) to the new bins xnew
-         Interpolation is performed such that the mean of the function is conserved
-         Input: 
-           -spectrum: dictionary, containing
-              -L:       linear extent of the wavelength range
-              -wave:    wavelength or Hubble velocity
-              -flux:    flux
-           -wave:       new wavelenght or Hubble velocioty to rebin to 
-           '''
+        """
+        Rebin the flux data to match new wavelength or Hubble velocity bins.
+
+        Args:
+            spectrum (numpy.ndarray): Input flux data.
+            wave (numpy.ndarray): Array defining the new wavelength bins.
+
+        Returns:
+            numpy.ndarray: Array of rebinned flux values.
+        """
         # determine pixel size
         L    = self.box_kms #spectrum["L"]
         npix = len(spectrum) #spectrum["npix"]
@@ -478,11 +502,17 @@ class Analyse_Opticaldepth:
         noise = None
         
     def add_instrument_gaussian(self,tau,FWHM_kms = 2.6,vx =0):
-        '''
-        Convolves (using scipy.signal.convolve) to the optical depth a gassian, simulating instrument noise.
-        input: Optical depth, Full width maximum (default value 2.6 km/s)
-        output: Convolved signal
-        '''
+        """
+        Apply Gaussian convolution to simulate instrument noise on optical depth data.
+
+        Args:
+            tau (numpy.ndarray): Optical depth data.
+            FWHM_kms (float): Full-width at half maximum in km/s. Defaults to 2.6 km/s.
+            vx (numpy.ndarray or int): Velocity array for convolution; default is 0, meaning self.vkms is used.
+
+        Returns:
+            numpy.ndarray: Convolved optical depth data.
+        """
         if len(vx) == 0:
             vx = self.vkms
             
@@ -495,10 +525,17 @@ class Analyse_Opticaldepth:
 
         return tau_conv
     def read_out_noise(self,rebinned_flux, variance=0.05,seed=-1):
-        '''
-        Takes the rebinned flux and add the noise coused by the read-out noise with certain variance.
-        input: Rebinned flux, variance 
-        '''
+        """
+        Add Gaussian read-out noise to rebinned flux data.
+
+        Args:
+            rebinned_flux (numpy.ndarray): Array of rebinned flux values.
+            variance (float): Variance of the Gaussian noise to add. Default is 0.05.
+            seed (int): Seed for random number generation; if -1, initializes randomly.
+
+        Returns:
+            numpy.ndarray: Noise array for the rebinned flux.
+        """
         if seed != -1:
             np.random.seed(seed)
             
@@ -509,10 +546,17 @@ class Analyse_Opticaldepth:
         return noise
     
     def sh_noise(self,rebinned_flux, mean=1,seed=-1):
-        '''
-        Takes the rebinned flux and add the noise coused by the read-out noise with certain variance.
-        input: Rebinned flux, variance 
-        '''
+        """
+        Add Poisson noise to the rebinned flux data.
+
+        Args:
+            rebinned_flux (numpy.ndarray): Array of rebinned flux values.
+            mean (float): Mean of the Poisson distribution for the noise. Default is 1.
+            seed (int): Seed for random noise generation; if -1, initializes randomly.
+
+        Returns:
+            numpy.ndarray: Array of Poisson noise values.
+        """
         if seed != -1:
             np.random.seed(seed)
       
@@ -522,15 +566,16 @@ class Analyse_Opticaldepth:
         
 
     def gauss_decomposition(self,  ODs,  tresh=[14, 15, 16],scale_factor=1):
-        """Perform Gaussian decomposition on spectral lines.
+        """
+        Perform Gaussian decomposition on optical depths.
 
         Args:
-            ODs: List of optical depths.
-            tresh: List of thresholds for selecting data.
-            scale_factor: Scale factor for the optical depths this will 
+            ODs (list or dict): List or dictionary of optical depth values.
+            tresh (list): Threshold list for selecting data. Default is [14, 15, 16].
+            scale_factor (float): Scaling factor applied to optical depths. Default is 1.
 
         Returns:
-            Tuple: Dictionaries containing optical depth and flux results.
+            Tuple (dict, dict): Dictionaries of optical depth and flux results per threshold.
         """
 
         # Initialize threshold values for column density
@@ -600,17 +645,17 @@ class Analyse_Opticaldepth:
         return tau_f, flux_f
 
     def line_decomp(self, velocity, optical_depth, boxkms, sigma):
-        """Perform line decomposition for a spectral line.
+        """
+        Decompose spectral lines by identifying minima and maxima in optical depth.
 
         Args:
-            velocity (array): Array of velocities.
-            optical_depth (array): Array of optical depths.
-            boxkms (float): Width of the spectral box in kilometers per second.
-            sigma (float): Parameter used in calculations.
+            velocity (numpy.ndarray): Velocity data array.
+            optical_depth (numpy.ndarray): Optical depth values.
+            boxkms (float): Width of the spectral box in km/s.
+            sigma (float): Parameter used for column density calculations.
 
         Returns:
-            tuple: Tuple containing various quantities related to the identified spectral lines.
-
+            tuple: Contains data arrays for line maxima, start, end, and column densities.
         """
         # Calculate the number of pixels
         npix = len(velocity)
@@ -675,13 +720,11 @@ class Analyse_Opticaldepth:
         return line_maxima, line_start, line_end, column, column2, equv_w, nHtot
 
     def get_sigma(self):
-        """gets sigma
+        """
+        Calculate and return the sigma parameter used in Gaussian decomposition.
 
-        Args:
-            None
         Returns:
-            tuple: Tuple containing various quantities related to the identified spectral lines.
-
+            float: Sigma parameter for the line decomposition.
         """
         line_f     = self.line_f0
         line_l0    = self.line_l0

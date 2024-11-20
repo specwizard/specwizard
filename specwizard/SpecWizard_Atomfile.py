@@ -8,14 +8,19 @@ from mendeleev.fetch import fetch_table
 import roman
 
 class Atomfile:
-    """ This Class creates the atom file that contains the atomic transition data that will be use to create the spectra line of ions.
-        The data is retrieved from the NIST line database. https://physics.nist.gov/PhysRefData/ASD/lines_form.html 
-
+    """
+    This class creates the atom file containing atomic transition data used to generate spectral lines for ions.
+    The data is retrieved from the NIST Atomic Spectra Database (ASD): https://physics.nist.gov/PhysRefData/ASD/lines_form.html
     """
 
 
     def __init__(self,do_all_elements=False):
-
+        """
+        Initializes the Atomfile class by setting up URLs for the NIST database and generating an atomic directory.
+        
+        Args:
+            do_all_elements (bool): If True, includes all elements in the periodic table. If False, includes a default subset.
+        """
         self.nist_url = 'https://physics.nist.gov/cgi-bin/ASD/lines1.pl?'
 
         self.nist_grnd_url = 'https://physics.nist.gov/cgi-bin/ASD/ie.pl?'
@@ -59,7 +64,13 @@ class Atomfile:
 
     def format_line(self,line):
         """
-        This function add's a zero whenever a column from the table has an empty space. 
+        Adds a zero to any column in the line that has an empty space.
+        
+        Args:
+            line (list): A list of strings representing a line of data.
+            
+        Returns:
+            list: The formatted line with empty spaces replaced by '0'.
         """
         for i,ln in enumerate(line):
             if len(ln.strip()) == 0:
@@ -70,7 +81,13 @@ class Atomfile:
     
     def clean_rel_ints(self,value):
         """
-        In the NIST database the value of intensity is often found accompanied with certain characters. This function clean those characters so it can be converted into a string
+        Cleans intensity values from the NIST database by removing unwanted characters.
+        
+        Args:
+            value (str): Intensity value from the NIST database.
+            
+        Returns:
+            str: Cleaned intensity value as a string.
         """
         rel_ints_markers = ['*',':','-',',','a','bl','b','B','c','d','D','E','N','f','F','e','g','G','H','hfs','h','i','j','l','m','o','O','p','q','r','s','S','I','t','u','w','x','(',')','IV/2',' ','V/2','?']
         for marker in rel_ints_markers:
@@ -81,9 +98,15 @@ class Atomfile:
         return value    
     
     def format_lines_into_array(self,lines):
-        '''
-        This function takes the string lines from the query, and formats it into a numpy array.
-        '''
+        """
+        Formats query results from the NIST database into a numpy array.
+        
+        Args:
+            lines (list): List of strings representing the lines from the query response.
+            
+        Returns:
+            numpy.ndarray: Formatted array containing the data.
+        """
         df = []
         # The first 6 lines are the header 
         for line in lines[6:-1]:
@@ -102,7 +125,13 @@ class Atomfile:
     
     def check_for_query_errors(self,response):
         """
-        Checks for possible errors from the query response. It can be that the line is not available in the current wavelength range or that the user give a wrong ion key e.g (HI,h I,He IX)
+        Checks the query response for potential errors.
+        
+        Args:
+            response (requests.Response): Response object from the NIST database query.
+            
+        Raises:
+            Exception: If the response indicates no lines are available or an unrecognized ion.
         """
         if 'No lines are available in ASD with the parameters selected' in response.text:
             
@@ -114,7 +143,17 @@ class Atomfile:
 
     def mask_ground_states(self, ground_state,lines):
         """
-        Will check for the lines in the ground state, and only keep those. In case of not finding any, it will raise an exception. 
+        Filters the lines to include only those corresponding to the ground state.
+        
+        Args:
+            ground_state (str): Ground level configuration.
+            lines (numpy.ndarray): Array of lines to filter.
+            
+        Returns:
+            numpy.ndarray: Filtered lines corresponding to the ground state.
+            
+        Raises:
+            Exception: If no ground state lines are found.
         """
     
         ground_mask =lines[:,5]==ground_state
@@ -128,14 +167,15 @@ class Atomfile:
 
     def get_groundstate(self,ion_to_q):
         """
-        This Function query the nist data base to get the ground level configuration, this in order to only get the lines in such configuration.
-
+        Queries the NIST database to get the ground level configuration for a specific ion.
+        
         Args:
-            ion_to_q (str): Ion to query, it must be in roman numerals and with space e,g "H I", "Si IV" 
-
+            ion_to_q (str): Ion to query, formatted as "Element Symbol RomanNumeral" (e.g., "H I", "Fe XI").
+            
         Returns:
-            str : String of the ground level configuration. 
+            str: Ground level configuration.
         """
+
 
         url_grnd = self.nist_grnd_url+'spectra='+ion_to_q+'&units=1&format=1&remove_js=on&order=0&conf_out=on&e_out=0&submit=Retrieve+Data' 
         respond = requests.get(url=url_grnd)
@@ -147,14 +187,13 @@ class Atomfile:
 
     def create_hdf5_from_nist(self,file_name="atom_dat.hdf5", wavelength_low_lim=200.0,wavelength_upper_lim=8000.0,wavelength_resolution=0.1):
         """
-        This functions writes a hdf5 file containing the atomic transition of the strongest lines of each Ion. The information is query from the NIST data base. 
-        The default elements it queries are Hydrogen, Deuterium, Helium, Carbon, Oxygen, Silicon, Iron, Magnesium
-
+        Creates an HDF5 file containing atomic transition data queried from the NIST database.
+        
         Args:
-            file_name (str): file_name.hdf5 
-            wavelength_low_lim (float): Lower wavelength limit from the spectrograph, this will delimit the lines that we query in the database. In Amstrongs [Å]
-            wavelength_upper_lim (float): Upper wavelength limit from the spectrograph, this will delimit the lines that we query in the database. In Amstrongs [Å]
-            wavelength_resolution (float):  Resolution of the spectrograph. This translates into, if there are lines that are within this range, we will take it as one summing their f-value. In Amstrongs [Å]
+            file_name (str): Name of the HDF5 file.
+            wavelength_low_lim (float): Lower wavelength limit in Ångströms.
+            wavelength_upper_lim (float): Upper wavelength limit in Ångströms.
+            wavelength_resolution (float): Spectral resolution in Ångströms.
         """
         atom_dictionary = self.atom_dictionary
 
@@ -221,14 +260,14 @@ class Atomfile:
     
     def add_line_to_hdf5(self,file_name="atom_dat.hdf5",element_name="Oxygen",ion_name="O VII",fvalue=0.696,lambda0=21.601690):
         """
-        This function adds to (or create) to a hdf5 file a line for a particular ion
-
+        Adds a line for a specific ion to an HDF5 file.
+        
         Args:
-            file_name (str): file name to add line
-            element_name (str): name of element
-            ion_name (str): Ion name in the format of abreviation+*space*+roman_numeral e.g H I, Fe VII
-            fvalue (float): Osilator strenght of the ion. 
-            lambda0 (float): Rest frame wavelength in Amstrongs (Å)
+            file_name (str): Name of the HDF5 file.
+            element_name (str): Name of the element.
+            ion_name (str): Ion name in the format "ElementSymbol RomanNumeral".
+            fvalue (float): Oscillator strength.
+            lambda0 (float): Rest frame wavelength in Ångströms.
         """
         
         atomh5 = h5py.File(file_name,"a")
@@ -260,31 +299,34 @@ class Atomfile:
 
 
     def SetUnit(self,vardescription = 'text describing variable', Lunit=1, aFact=0, hFact=0):
-        '''
-        Creates dictionary to add context and conversion factors to a value.
-
+        """
+        Creates a dictionary containing metadata and conversion factors for a value.
+        
         Args:
-            vardescription (str): Text description of the variable
-            Lunit (float): Conversion value for CGS
-            aFact (float): expansion factor exponent. Needed for some cosmological simulations. 
-            hFact (float): hubble constant exponent. Needed for some cosmological simulations. 
-
+            vardescription (str): Description of the variable.
+            Lunit (float): Conversion factor to CGS units.
+            aFact (float): Exponent for the expansion factor (cosmological context).
+            hFact (float): Exponent for the Hubble constant (cosmological context).
+            
         Returns:
-            dict : Python dictionary with the formated values. 
+            dict: Dictionary with metadata and conversion factors.
+        """
 
-        '''
+        
         return {'VarDescription': vardescription, 'CGSConversionFactor':Lunit, 'aexp-scale-exponent' :aFact, 'h-scale-exponent': hFact}
 
 
 
     def get_nist_line(self,ion2do = 'H I'):
-        '''
-        This function query the NIST database to obtain the ion absorption line information.
-
+        """
+        Queries the NIST database for absorption line data of a specific ion.
+        
         Args:
-            ion2do (str): Ion name as formated with the element chemical symbol+*space*+roman numeral e.g (H I, Fe XI)
-
-        '''
+            ion2do (str): Ion name in the format "ElementSymbol RomanNumeral".
+            
+        Returns:
+            tuple: (numpy.ndarray of lines, str of the query URL).
+        """
         
         low_w = str(self.wavelength_low)
         upp_w = str(self.wavelength_high)

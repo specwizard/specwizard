@@ -4,7 +4,6 @@ from .SpecWizard_ProjectData import SightLineProjection
 from .SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
 
 
-        
 def GenerateShortSpectra(Wizard=[]):
 
     snapshot  = ReadData(wizard = Wizard)

@@ -1,7 +1,10 @@
 /dist/
+*~
+/docs/build/
+/Examples/
 /*.egg-info
 /.eggs
 .pypirc
-.pypirc~check
+.pypirc~checkgit 
 /__pycache__/
 **/__pycache__/

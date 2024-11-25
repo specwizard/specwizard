@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "specwizard"
-version = "0.9.0.3"
+version = "0.9.1.1"
 authors = [
     { name="Andres Aramburo-Garcia", email="aramburo@lorentz.leidenuniv.nl" },{name = "Tom Theuns", email = "tom.theuns@durham.ac.uk"},
 ]
 description="."
-readme = "README.md"
+readme = "README.rst"
 requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -27,7 +27,7 @@ dependencies = [
     "matplotlib",
     "hydrangea",
     "bs4",
-    "yaml",
+    "pyyaml",
     "h5py",
     "astropy"
 ]
@@ -35,3 +35,6 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/specwizard/specwizard"
 "Bug Tracker" = "https://github.com/specwizard/specwizard/issues"
+
+[tool.setuptools.packages.find]
+exclude = ["docs*", "Examples*"]

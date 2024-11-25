@@ -83,8 +83,6 @@ class TGauss:
     
     
 kernel = Bspline()
-kernel.Info()
-#kernel = TGauss()
 
 class ColumnTable:
     ''' This class creates a table to interpolate column densities computed through

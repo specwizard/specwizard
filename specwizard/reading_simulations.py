@@ -551,7 +551,7 @@ class InputFunctions:
                            Lunit=1.0, aFact=0, hFact=0)
             particlesSFR['StarFormationRate'] = {'Value':SFR, 'Info':unit} 
             
-        return particlesSFR
+        return particlesSFR['StarFormationRate']
     
     
     

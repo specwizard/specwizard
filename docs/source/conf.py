@@ -18,7 +18,10 @@ release = '1'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','nbsphinx']
+extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','sphinx_tabs.tabs','nbsphinx','matplotlib.sphinxext.mathmpl',
+          'matplotlib.sphinxext.plot_directive',
+          'sphinx.ext.doctest'
+        ]
 # Napoleon settings
 napoleon_google_docstring = True
 

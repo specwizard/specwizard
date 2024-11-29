@@ -18,8 +18,11 @@ Overview
    
    Installation/index.rst
    Examples/index.rst
+   ShortSpectra/shortspectra.rst
    specwizard
    modules
+
+
 Indices and tables
 ==================
 

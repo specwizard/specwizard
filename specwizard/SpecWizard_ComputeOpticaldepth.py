@@ -13,12 +13,12 @@ class ComputeOpticaldepth:
     Args:
         sightlineprojection (dict): A dictionary containing parameters related to the sight line projection.
     '''
-    def _git_init__(self, sightlineprojection):
+    def __init__(self, Wizard):
         '''
         Initializes the ComputeOpticaldepth class with the provided sight line projection.
 
         Args:
-            sightlineprojection (dict): The specwizard dictionary containing parameters for the sight line projection,
+            Wizard (dict): The specwizard dictionary containing parameters for the sight line projection,
                 including extra parameters, element parameters, ion parameters, and optical depth parameters.
 
         Attributes:
@@ -31,7 +31,7 @@ class ComputeOpticaldepth:
             PecVelEff (bool): Indicates whether peculiar velocity effects are disabled (True if they are off).
             VoigtOff (bool): Indicates whether Voigt profile effects are disabled (True if they are off).
         '''
-        self.specparams = sightlineprojection
+        self.specparams = Wizard
         self.periodic   = self.specparams['extra_parameters']['periodic']
         
         # For each of the ions, determine rest-wavelength and f-value of the first transition

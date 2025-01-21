@@ -10,7 +10,7 @@ from .SpecWizard_IonTables import IonTables
 import yaml
 import traceback
 import mendeleev
-
+import unyt
 
 class Build_Input:
     """
@@ -343,7 +343,7 @@ class Build_Input:
         # Set ODParams dictionary with user options
         self.specparams['ODParams'] = {'ThermalEffectsOff': ThermalEffectsOff,
                                        'PecVelEffectsOff': PecVelEffectsOff,
-                                       'Veloffset': VelOffset_kms,
+                                       'Veloffset': VelOffset_kms*unyt.km/unyt.s,
                                        'VoigtOff': VoigtOff}
 
     def SetLongSpectraParams(self, lambda_min=945., lambda_max=8000., dlambda=0.5, z_qsr=3.0, delta_z=0.01, file_dir='',all_contaminants=False):

@@ -58,6 +58,9 @@ class ReadData:
         inputfunc = InputFunctions(fileparams=self.wizard, header=self.header)
         self.ToCGS = inputfunc.ToCGS
         self.Hubble = inputfunc.Hubble
+        self.to_unyt = inputfunc.set_particle_data_to_unyt
+        self.to_physical = inputfunc.to_physical
+
 
     def read_header(self):
         """
@@ -127,5 +130,6 @@ class ReadData:
 
         self.wizard['sightline'] = sightline
         self.wizard['Header'] = self.header
+        particles = self.to_unyt(part_data=particles)
 
         return {'SightInfo': sightline, 'Particles': particles, 'Header': self.header}

@@ -1,5 +1,6 @@
 # %load SpecWizard_Lines_tom.py
 import numpy as np
+import unyt
 import scipy.interpolate as interpolate
 from scipy.signal import convolve
 from scipy.special import erf
@@ -7,28 +8,31 @@ from astropy.modeling.functional_models import Voigt1D
 from scipy.special import voigt_profile as VoigtSciPy
 from .Phys import ReadPhys
 constants = ReadPhys()
+from unyt.dimensions import length, time, mass, temperature
+from unyt import accepts
+
 # convolve(in1, in2, mode='full', method='auto')[source]
 class Lines:
     ''' Methods to compute optical depth as a function of velocity for a single absorber,
         implementing:
         - a Gaussian profile
         - a Voigt profile
-        '''
+    '''
 
     def __init__(self, v_kms =0.0, box_kms=-1.0, constants=constants, lambda0_AA=1215.67, f_value=0.4164,
                  naturalwidth_kms=6.06076e-3,verbose=False, periodic=True):
 
         self.constants    = constants
         self.verbose      = verbose
-        self.v_kms        = np.array(v_kms)     # velocity bins to evaluate optical depth [km/s]
+        self.v_kms        = v_kms     # velocity bins to evaluate optical depth [km/s]
         self.pix_kms      = v_kms[1] - v_kms[0] # pixel size
         self.periodic     = periodic
         self.box_kms      = box_kms             # velocity extent of spectrum
         self.npix         = len(self.v_kms)
-        self.lambda0      = lambda0_AA * 1e-8  # rest-wavelength           [cm]
+        self.lambda0      = lambda0_AA * 1e-8  * unyt.cm # rest-wavelength           [cm]
         self.f_value      = f_value            # oscillator strength       [dimensionless]
-        self.naturalwidth = naturalwidth_kms   # natural line width        [km/s]self.
-        self.sigma        = self.constants["c"] * np.sqrt(3*np.pi*self.constants["sigmaT"]/8.) * self.f_value * self.lambda0
+        self.naturalwidth = naturalwidth_kms    # natural line width        [km/s]self.
+        self.sigma        = self.constants["c"] * np.sqrt(3*np.pi*self.constants["sigmaT"] /8.) * self.f_value * self.lambda0
     def errfunc(self):
         # tabulated error function
         pix     = 1e-2
@@ -42,10 +46,10 @@ class Lines:
     def IDinterpol(self, x, xp, fp, cumulative=True):
         ''' Interpolate the function fx(xp) to the points x, conserving the integral of fp.
             This assumes that both x and xp are equally spaced '''
-
         # extend x axis by one element
         dx   = x[-1] - x[-2]
         xnew = np.concatenate((x, [x[-1]+dx]))
+
 
         # compute culmulative sum of fp's and extend by one element
         if not cumulative:
@@ -57,12 +61,12 @@ class Lines:
 
         # interpolate cumulative sum
         fcnew = np.interp(xnew, Xc, Fc)
-
         # difference
         fnew  = (np.roll(fcnew, -1) - fcnew)[:-1]
-
+        fnew  = fnew
         return fnew    
 
+    @accepts(column_densities=length**-2,b_kms=length/time,vion_kms=length/time,Tions=temperature)
     def gaussian(self, column_densities = 0, b_kms = 0,vion_kms=0,Tions= 0):
 
         naturalwidth_kms = self.naturalwidth    # natural line width        [km/s]
@@ -72,7 +76,7 @@ class Lines:
         periodic     = self.periodic
 
         # line cross section times speed of light, c [cm^2 * cm/s]
-        sigma        = self.sigma
+        sigma        = self.sigma.in_cgs().value
         
         # generate normalized error function
         verf, erf = self.errfunc()
@@ -80,28 +84,42 @@ class Lines:
         # extent velocity range
         pixel_velocity_kms = np.concatenate((self.v_kms - self.box_kms, self.v_kms, self.v_kms + self.box_kms))
         tau          = np.zeros_like(pixel_velocity_kms)
-        densities    = np.zeros_like(pixel_velocity_kms)
-        velocities   = np.zeros_like(pixel_velocity_kms)
-        temperatures = np.zeros_like(pixel_velocity_kms)
+        densities    = np.zeros_like(pixel_velocity_kms) #* column_densities
+        velocities   = np.zeros_like(pixel_velocity_kms) #* vion_kms
+        temperatures = np.zeros_like(pixel_velocity_kms) #* Tions.units
+
+        no_unyt_pixel_velocity_kms = pixel_velocity_kms.in_cgs().value
+
+        #strip units for performance 
+        col_dens_unit, no_unyt_column_densities = column_densities.in_cgs().units, column_densities.in_cgs().value
+        b_unit, no_unyt_b_kms   = b_kms.in_cgs().units, b_kms.in_cgs().value
+        vion_unit, no_unyt_vion_kms = vion_kms.in_cgs().units, vion_kms.in_cgs().value
+        T_unit, no_unyt_Tions    = Tions.in_cgs().units, Tions.in_cgs().value
         
-        for column_density, b, vel,Tion in zip(column_densities, b_kms, vion_kms,Tions):
+        for column_density, b, vel,Tion in zip(no_unyt_column_densities, no_unyt_b_kms, no_unyt_vion_kms,no_unyt_Tions):
             if column_density >0:
                 # scale b-parameter
                 v_line = b * verf
 
                 # interpolate, and convert velocity from km/s to cm/s
-                g_int   = column_density * sigma * self.IDinterpol(pixel_velocity_kms - vel, v_line, erf, cumulative=True) / 1e5
 
+                g_int   = column_density * sigma * self.IDinterpol(no_unyt_pixel_velocity_kms - vel, v_line, erf, cumulative=True) 
                 # add
                 tau          += g_int
                 densities    += g_int * column_density
                 velocities   += g_int * vel
                 temperatures += g_int * Tion            
+
         # normalize to pixel size
-        tau /= self.pix_kms
-        densities /= self.pix_kms
-        velocities /= self.pix_kms
-        temperatures /= self.pix_kms
+        pix_cms = self.pix_kms.in_cgs().value
+        tau /= pix_cms
+        densities /= pix_cms
+        velocities /= pix_cms
+        temperatures /= pix_cms
+        # Give back units 
+        densities    *= col_dens_unit 
+        velocities   *= vion_unit 
+        temperatures *= T_unit
         nint = self.npix
         
         if periodic:
@@ -126,7 +144,7 @@ class Lines:
 
         # compute total column density
         
-        nh_tot = np.cumsum(tau)[-1] * 1.e5 * self.pix_kms / sigma
+        nh_tot = np.cumsum(tau)[-1] * pix_cms / self.sigma.in_cgs()
         spectrum = {'pixel_velocity_kms':pixel_velocity_kms,
             'optical_depth':tau,
             'optical_depth_densities':densities,
@@ -141,7 +159,7 @@ class Lines:
         ''' Direct Gaussian line profile evaluated at centre of each pixel '''
 
         # cross section [cm^3/s]
-        sigma     = self.constants["c"] * np.sqrt(3*np.pi*self.constants["sigmaT"]/8.) * f_value * lambda0 # cross section cm^3/s        
+        sigma     = self.constants["c"].value * np.sqrt(3*np.pi*self.constants["sigmaT"].value/8.) * f_value * lambda0 # cross section cm^3/s        
         
         # extent velocity range
         velocity_kms = np.concatenate((self.v_kms - self.box_kms, self.v_kms, self.v_kms + self.box_kms))
@@ -187,19 +205,21 @@ class Lines:
             # before performing the convolution.
 
             # Create velocity bins for interpolation
-            dv         = 1e-3                   # pixel size in km/s
+            dv         = 1e-3         # pixel size in km/s
             vmin       = np.min(self.v_kms)
             vmax       = np.max(self.v_kms)
             nbins      = np.array((vmax-vmin)/dv,dtype=int)
             dv         = (vmax-vmin)/float(nbins)
             v_convolve = vmin + np.arange(nbins) * dv 
 
+            
+
             # Create lorentz profile
             phi_fine    = np.interp(v_convolve, self.v_kms, phi)
             width       = self.naturalwidth
             v_bins      = v_convolve - np.mean(v_convolve)              # centre Lorenz at the centre of the velocity interval
             lorentz     = (1./np.pi) * width / (v_bins**2 + width**2)   
-            lorentz     = lorentz / 1e5                                 # convert to units of [s/cm]
+            lorentz     = lorentz                                 # convert to units of [s/cm]
 
             # The integral over the Lorentzian is normalized to unity, so that
             # sum(lorentz) dpix = 1, or the pixel size = 1/np.sum(lorentz)
@@ -276,7 +296,7 @@ class Lines:
         f_value    = 0.4164          # Lya f-value
 
         # compute Lya cross section [cm^2 km/s]
-        sigma_a    = np.sqrt(3*np.pi*constants["sigmaT"]/8.) * f_value * lambda0 * (constants["c"]) / 1e5
+        sigma_a    = np.sqrt(3*np.pi*constants["sigmaT"].value/8.) * f_value * lambda0 * (constants["c"].value) / 1e5
 
         # generate velocity grid for convolution
 
@@ -287,7 +307,7 @@ class Lines:
         vel     = np.arange(-npix, npix) * pix
         tau     = np.interp(vel, vel_kms, tau_Lymanalpha)
         #hnu_eV  = 13.6 * (1. - vel * 1e5 / constants["c"])
-        hnu_eV  = 13.6 * np.exp(-((vel*1e5)/constants["c"]))
+        hnu_eV  = 13.6 * np.exp(-((vel*1e5)/constants["c"].value))
         sigma   = self.sigmaHI(hnu_eV=hnu_eV)
         tau_LL  = convolve(tau/sigma_a, sigma, mode='same')
         tau_LL *= pix

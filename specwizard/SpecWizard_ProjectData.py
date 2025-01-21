@@ -1,6 +1,7 @@
 
 import numpy as np
 import scipy.interpolate as interpolate
+import unyt
 #
 from .SpecWizard_Input import ReadData
 from .SpecWizard_Elements import Elements
@@ -8,18 +9,17 @@ from .SpecWizard_IonizationBalance import IonizationBalance
 from .SpecWizard_SplineInterpolation import ColumnTable
 from .SpecWizard_SplineInterpolation import Bspline, TGauss
 from .SpecWizard_IonTables import IonTables
+from .reading_simulations import InputFunctions
+
 #
 from .Phys import ReadPhys
 constants = ReadPhys()
-kernel = Bspline()
-kernel = TGauss()
 
 class SightLineProjection:
     
     ''' Interpolate particle properties to a sight line, using SPH kernel interpolation '''
     def __init__(self, specparams, kernelprojection="Bspline",pixkms=1):
         self.specparams        = specparams
-
         self.kernelprojection = specparams["extra_parameters"]['Kernel']
         self.pixkms           = specparams["extra_parameters"]['pixkms']
         #set kernel
@@ -40,7 +40,9 @@ class SightLineProjection:
         self.periodic          = self.specparams['extra_parameters']['periodic']
         
         #set pixel size
-        self.specparams["pixkms"] = self.pixkms
+        self.specparams["pixkms"] = self.pixkms 
+
+        self.inputfunc          = InputFunctions(fileparams=specparams, header=specparams['Header'])
     def Info(self):
         #
         print("This class interpolates particle data to a sightline")
@@ -89,10 +91,11 @@ class SightLineProjection:
         elementnames       = self.specparams["elementparams"]["ElementNames"]
         header             = sightlinedata["Header"] 
         los_length         = sightinfo['ProjectionLength']
+        self.to_physical   = self.inputfunc.to_physical
         
         
-        boxkms = sightinfo["Boxkms"]["Value"]  # in km/s
-        box    = sightinfo["Box"]["Value"]     # in programme units
+        boxkms = sightinfo["Boxkms"]["Value"].value  # in km/s
+        box    = sightinfo["Box"]["Value"].value    # in programme units
         self.specparams['short-LOS']     = sightinfo['short-LOS']
         
         # compute extra properties for sightline
@@ -109,17 +112,17 @@ class SightLineProjection:
         zpix  = np.arange(-npix, 2*npix) / (3*npix.astype(float))  # extend the sightline for easy periodic boundary implementation
         
         # (x,y) positions of sight line as a fraction of the box 
-        proj0 = xproj = sightinfo['x-position'] * sightinfo["Box"]["Value"]
-        proj1 = yproj = sightinfo['y-position'] * sightinfo["Box"]["Value"]
-        proj2 = zproj = sightinfo['z-position'] * sightinfo["Box"]["Value"]
+        proj0 = xproj = sightinfo['x-position'] * sightinfo["Box"]["Value"].value
+        proj1 = yproj = sightinfo['y-position'] * sightinfo["Box"]["Value"].value
+        proj2 = zproj = sightinfo['z-position'] * sightinfo["Box"]["Value"].value
 
         
         # +++++ Particle properties
         # mass
-        mass  = particles['Masses']['Value']
+        mass  = particles['Masses']['Value'].value
         
         # smoothing length and its inverse
-        h     = particles['SmoothingLengths']['Value']
+        h     = particles['SmoothingLengths']['Value'].value
         hinv  = 1./h
         
         # Check smoothing length vs pix size 
@@ -127,23 +130,25 @@ class SightLineProjection:
         
 
         # impact parameter in units of smoothing length. Note: we impose periodic boundary conditions if periodic=True.
-        dx  = self.PeriodicDist(particles['Positions']['Value'][:,0] - proj0, box,self.periodic)*hinv  # off-set from sightline in x
-        dy  = self.PeriodicDist(particles['Positions']['Value'][:,1] - proj1, box,self.periodic)*hinv  # off-set from sightline in x
+        dx  = self.PeriodicDist(particles['Positions']['Value'][:,0].value - proj0, box,self.periodic)*hinv  # off-set from sightline in x
+        dy  = self.PeriodicDist(particles['Positions']['Value'][:,1].value - proj1, box,self.periodic)*hinv  # off-set from sightline in x
         b   = np.sqrt(dx**2+dy**2)                                                         # impact parameter
-        vz  = particles['Velocities']['Value'][:,2]# peculiar velocity along sightline
+        vz  = particles['Velocities']['Value'][:,2].value# peculiar velocity along sightline
             
        # mask particles that contribute
         mask  = b < 1.1
 
         #shift_in_z is 
         shift_in_z   = zproj 
-        int_zmins    = ((particles['Positions']['Value'][:,2] - h -shift_in_z) / pix).astype(int) - 1
-        zcents       = particles['Positions']['Value'][:,2] - shift_in_z
+        int_zmins    = ((particles['Positions']['Value'][:,2].value - h -shift_in_z) / pix).astype(int) - 1
+        zcents       = particles['Positions']['Value'][:,2].value - shift_in_z
         int_zcents   = np.round(zcents / pix).astype(int)
-        int_zmaxs    = ((particles['Positions']['Value'][:,2] + h - shift_in_z) / pix).astype(int) + 1
+        int_zmaxs    = ((particles['Positions']['Value'][:,2].value + h - shift_in_z) / pix).astype(int) + 1
 
 
-        
+        dens_unyts = particles['Densities']["Value"].units
+        vel_unyts = particles['Velocities']["Value"].units
+        temp_unyts =particles['Temperatures']["Value"].units
         # interpolated values along the sight line
         
         # total density
@@ -167,7 +172,7 @@ class SightLineProjection:
             rho_element[element]['Densities']    = {'Value': np.zeros(npix), 'Info': nunit}   # element mass density                          # ion particle density
             rho_element[element]['Velocities']   = {'Value': np.zeros(npix), 'Info': vunit}   # element-weighted peculiar velocity
             rho_element[element]['Temperatures'] = {'Value': np.zeros(npix), 'Info': tunit}   # element-weighted temperature
-            rho_element[element]['Mass']         = self.specparams["elementparams"][element]["Mass"] 
+            rho_element[element]['Mass']         = self.specparams["elementparams"][element]["Mass"]
         
         # ion densities
         rho_ion                 = {}
@@ -192,13 +197,13 @@ class SightLineProjection:
         # determine element fractions
 #        if ReadIonfrac==False:
         ParticleAbundances = {}
-        hydrogenfraction = self.ToCGS(header, particles["Abundances"]["Hydrogen"])                                                                  
-        nH_cgs           = self.ToCGS(header, particles['Densities']) * hydrogenfraction / constants["mH"]
-        temperature      = self.ToCGS(header, particles['Temperatures'])
-        Z                = self.ToCGS(header, particles['Metallicities'])
+        hydrogenfraction = (self.to_physical(particles["Abundances"]["Hydrogen"]).in_cgs()).value                                                             
+        nH_cgs           = (self.to_physical(particles['Densities']).in_cgs() * hydrogenfraction / constants["mH"]).value
+        temperature      = (self.to_physical(particles['Temperatures']).in_cgs()).value
+        Z                = (self.to_physical(particles['Metallicities']).in_cgs()).value
         redshift         = header["Cosmo"]["Redshift"] + np.zeros_like(temperature)
         for element in elementnames:
-            massfraction   = self.ToCGS(header, particles["Abundances"][element])
+            massfraction   = (self.to_physical(particles["Abundances"][element]).in_cgs()).value
             ParticleAbundances[element] = {}
             ParticleAbundances[element]["massfraction"] = massfraction  # fraction of this element by mass
             ParticleAbundances[element]["element mass"] = \
@@ -209,7 +214,7 @@ class SightLineProjection:
         for (element, ion) in ions:
             
             if ion == 'D I':
-                ComputedIonFractions[ion] = self.CalculateHDI(header, hydrogenfraction, particles["Masses"])# n_ion/n_element
+                ComputedIonFractions[ion] = self.CalculateHDI(header, hydrogenfraction, particles["Masses"].value())# n_ion/n_element
             else:
                 LogIonfraction = ionizationbalance.IonAbundance(redshift, 
                                     nH_density=nH_cgs, temperature=temperature,metal_fraction=Z, ion=ion)
@@ -221,7 +226,7 @@ class SightLineProjection:
             rho_ion_sim           = {}
             for SimIon in SimIons:
 
-                SimulationIonFraction[SimIon] = self.ToCGS(header, particles['SimulationIonFractions'][SimIon])
+                SimulationIonFraction[SimIon] = self.to_physical(particles['SimulationIonFractions'][SimIon]).in_cgs()
 
                 rho_ion_sim[SimIon]                 = {}
                 rho_ion_sim[SimIon]['Densities']    = {'Value': np.zeros(npix), 'Info': nunit}  # ion mass density
@@ -242,7 +247,7 @@ class SightLineProjection:
             if b[i] > 1: # require particle contributes to sightline
                 continue
             
-            zcent   = zcents[i]                                                  # z-location of particle
+            zcent   = zcents[i]                                                 # z-location of particle
             izmin   = int_zmins[i]                                               # z-coordinate of first pixel that particle contributes to (maybe negative)
             izmax   = int_zmaxs[i]                                               # z-coordinate of first pixel that particle contributes to (maybe larger than sight line)
 
@@ -306,7 +311,6 @@ class SightLineProjection:
                 diff  *= mass[i]       # multiply with mass of particle                                                 
             
             mdiff  = np.copy(diff) # save mass-weighted kernel contribution
-            
             # density-weighted quantities
             rho_tot['Densities']['Value'][intz]     += diff
             rho_tot['Velocities']['Value'][intz]    += diff * vz[i]
@@ -315,7 +319,6 @@ class SightLineProjection:
             # Densities of elements
             for element in elementnames:
                 diff = mdiff * ParticleAbundances[element]["massfraction"][i]
-                #
                 rho_element[element]['Densities']['Value'][intz]    += diff
                 rho_element[element]['Velocities']['Value'][intz]   += diff * vz[i]
                 rho_element[element]['Temperatures']['Value'][intz] += diff * temperature[i]
@@ -340,35 +343,49 @@ class SightLineProjection:
 
             except:
                 pass
-         
+        
         # normalize peculiar velocity and temperature
         mask = rho_tot['Densities']['Value'] > 0
+
         rho_tot['Velocities']['Value'][mask]   /= rho_tot['Densities']['Value'][mask]
         rho_tot['Temperatures']['Value'][mask] /= rho_tot['Densities']['Value'][mask]
-        
+
+        rho_tot['Densities']['Value'] *= dens_unyts  
+        rho_tot['Velocities']['Value'] *= vel_unyts
+        rho_tot['Temperatures']['Value'] *=temp_unyts      
+
         for element in elementnames:
+
             mask = rho_element[element]['Densities']['Value'] > 0
-            rho_element[element]['Velocities']['Value'][mask]    /= rho_element[element]['Densities']['Value'][mask]
-            rho_element[element]['Temperatures']['Value'][mask]  /= rho_element[element]['Densities']['Value'][mask]
+            rho_element[element]['Velocities']['Value'][mask]   /=  rho_element[element]['Densities']['Value'][mask]
+            rho_element[element]['Temperatures']['Value'][mask] /=  rho_element[element]['Densities']['Value'][mask]
+
+            rho_element[element]['Densities']['Value']   *= dens_unyts  
+            rho_element[element]['Velocities']['Value']   *= vel_unyts
+            rho_element[element]['Temperatures']['Value'] *=temp_unyts      
+
 
         for (element, ion) in ions:            
+
             mask = rho_ion[ion]['Densities']['Value'] > 0
             rho_ion[ion]['Velocities']['Value'][mask]    /= rho_ion[ion]['Densities']['Value'][mask]
             rho_ion[ion]['Temperatures']['Value'][mask]  /= rho_ion[ion]['Densities']['Value'][mask]
 
+            rho_ion[ion]['Densities']['Value'] *= dens_unyts  
+            rho_ion[ion]['Velocities']['Value'] *= vel_unyts
+            rho_ion[ion]['Temperatures']['Value'] *=temp_unyts
         
         # prepare output
         unit                   = particles["Positions"]['Info']
         unit["VarDescription"] = 'pixel size'
-        pixelsize              = {'Value': pix, 'Info': unit}
+        pixelsize              = {'Value': pix*unyt.Mpc, 'Info': unit}
         pixelsize_dv           = self.SetUnit(vardescription='Hubble velocity accross pixel', 
-                                              Lunit=1e5,
                                               aFact=0.0,
                                               hFact=0.0)
-        pixelsize_kms          = {'Value': pixkms, 'Info': pixelsize_dv}
-        
+        pixelsize_kms          = {'Value': pixkms*unyt.km/unyt.s, 'Info': pixelsize_dv}
+    
         boxkms_info            = sightinfo["Boxkms"]['Info']
-        sightkms               = {'Value':sightkms,'Info':boxkms_info}
+        sightkms               = {'Value':sightkms*unyt.km/unyt.s,'Info':boxkms_info}
 
         self.specparams['sightline']['sightkms'] = sightkms
         
@@ -418,5 +435,5 @@ class SightLineProjection:
         '''
         return variable["Value"] * self.CGSunit(header, variable)
 
-    def SetUnit(self, vardescription = 'text describing variable', Lunit=constants['Mpc'], aFact=1.0, hFact=1.0):
-        return {'VarDescription': vardescription, 'CGSConversionFactor':Lunit, 'aexp-scale-exponent' :aFact, 'h-scale-exponent': hFact}
+    def SetUnit(self, vardescription = 'text describing variable', aFact=1.0, hFact=1.0):
+        return {'VarDescription': vardescription, 'aexp-scale-exponent' :aFact, 'h-scale-exponent': hFact}

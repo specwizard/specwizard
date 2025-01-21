@@ -2,6 +2,7 @@ import h5py
 import glob
 from .Phys import ReadPhys
 import re
+import unyt
 import numpy as np
 import swiftsimio as sw
 import pyread_eagle as read_eagle
@@ -163,8 +164,8 @@ class InputFunctions:
             xaxis  = sightline_s[groupdic['x-axis']]
             yaxis  = sightline_s[groupdic['y-axis']]
             zaxis  = sightline_s[groupdic['z-axis']]
-            xpos   = sightline_s[groupdic['x-position']] / box_size
-            ypos   = sightline_s[groupdic['y-position']] / box_size
+            xpos   = sightline_s[groupdic['x-position']] / box_size.value
+            ypos   = sightline_s[groupdic['y-position']] / box_size.value
             zpos   = 0 
 
             sightline    = { 'nsight': sightline['nsight'], 
@@ -186,21 +187,18 @@ class InputFunctions:
 
         # compute the velocity extent of the simulation volume in the sightline direction
         z_axis  = sightline["z-axis"]        
-        box_cgs = self.ToCGS(header["BoxSize"])[z_axis]       # in proper cm
-        box_kms = box_cgs * self.Hubble() / 1e5                    # in km/s
+        box_cgs = self.to_physical(header["BoxSize"])[z_axis].in_cgs()       # in proper cm
+        box_kms = box_cgs.to('km') * self.Hubble()# in km/s
         unit    = self.set_unit(vardescription='Extent of simulation volume in direction of projection in terms of Hubble velocity',
-                        Lunit  = 1e5,
+                        Lunit  = 1,
                         aFact  = 0.,
                         hFact  = 0.)
         
         sightline["Boxkms"] = {'Value': box_kms, 'Info': unit}
+        sightline["Boxkms"]['Info'].pop('CGSConversionFactor','None')
         #
         box      = header["BoxSize"]["Value"][z_axis]
-        unit     = self.set_unit(vardescription=header["BoxSize"]["Info"]["VarDescription"],
-                        Lunit  = header["BoxSize"]["Info"]['CGSConversionFactor'],
-                        aFact  = header["BoxSize"]["Info"]['aexp-scale-exponent'],
-                        hFact  = header["BoxSize"]["Info"]['h-scale-exponent'])
-        box      = {'Value':box, 'Info': unit}
+        box      = {'Value':box, 'Info': header["BoxSize"]['Info']}
         sightline["Box"] = box
         
         sightline['short-LOS'] = False
@@ -342,7 +340,7 @@ class InputFunctions:
             colfile    = h5py.File(self.fname,'r')
             col_ions   = colfile['SubgridScheme']['NamedColumns']['SpeciesFractions'][...].astype('str')
             Abundances = particles['Abundances']
-            dens_cgs   = self.ToCGS(particles['Densities'])
+            dens_cgs   = self.to_physical(self.assing_unit_unyt(particles['Densities'],'Densities')).in_cgs()
             nH         = dens_cgs * Abundances['Hydrogen']['Value'] / constants['mH']
 
             col_ions_formated = np.array([self.FormatTxt(col_ion) for col_ion in col_ions])
@@ -511,15 +509,15 @@ class InputFunctions:
         """
         #header     = self.read_group()
         #dependence on expansion factor
-        ascale     = (1./(1+self.header["Cosmo"]["Redshift"]))**variable["Info"]["aexp-scale-exponent"]
+        #ascale     = (1./(1+self.header["Cosmo"]["Redshift"]))**variable["Info"]["aexp-scale-exponent"]
 
         # dependence on hubble parameter
-        hscale     = (self.header["Cosmo"]["HubbleParam"])**variable["Info"]["h-scale-exponent"]
+        #hscale     = (self.header["Cosmo"]["HubbleParam"])**variable["Info"]["h-scale-exponent"]
         
         #
-        return variable["Info"]["CGSConversionFactor"] * ascale * hscale
+        return variable["Info"]["CGSConversionFactor"] #* ascale * hscale
     
-    
+
     def set_SFR(self,read_variable,groupname,particles):
         """
         Attempts to read star formation rates, if not creates a zero array. For some users dealing with star forming particles in important and how to deal with them is part of BuildInput. 
@@ -552,7 +550,97 @@ class InputFunctions:
             particlesSFR['StarFormationRate'] = {'Value':SFR, 'Info':unit} 
             
         return particlesSFR['StarFormationRate']
-    
+    def unyt_dict(self,):
+        '''
+        returns unyt dictionary 
+        '''
+        unyt_dict = {}
+
+        unyt_dict["In"] = {"Positions": unyt.cm,
+                    "Masses":unyt.g,
+                    "Velocities":unyt.cm/unyt.s,
+                    "Densities":unyt.g/unyt.cm**3,
+                    "Temperatures":unyt.K,
+                    "SmoothingLengths":unyt.cm,
+                    "Abundances":unyt.dimensionless,
+                    "Metallicities":unyt.dimensionless,
+                    "StarFormationRate":unyt.g/unyt.s,
+                    "BoxSize":unyt.cm}
+
+
+        unyt_dict["Out"] = {"Positions": unyt.Mpc,
+                    "Masses":1e10*unyt.Msun,
+                    "Velocities":unyt.km/unyt.s,
+                    "Densities":1e10*unyt.Msun/unyt.Mpc**3,
+                    "Temperatures":unyt.K,
+                    "SmoothingLengths":unyt.Mpc,
+                    "Abundances":unyt.dimensionless,
+                    "Metallicities":unyt.dimensionless,
+                    "StarFormationRate":unyt.Msun/unyt.s,
+                    "BoxSize":unyt.Mpc}
+
+        return unyt_dict 
+
+    def assing_unit_unyt(self,quantity,item_name):
+
+        '''
+        Converts the quantity into a unyt array. 
+        '''
+
+        unyt_dictionary = self.unyt_dict()
+        item_value = unyt.unyt_array(self.ToCGS(quantity),unyt_dictionary["In"][item_name])
+        return item_value.to(unyt_dictionary["Out"][item_name])
+
+
+
+    def set_particle_data_to_unyt(self,part_data):
+        
+        test_unyt = {}
+
+
+        for item in part_data.keys():
+            if item == "Elements":
+                continue
+            if item == "Abundances":
+                test_unyt[item] = {}
+
+                for abun in part_data[item]:
+
+                    test_unyt[item][abun] = {}
+                    test_unyt[item][abun]['Value'] = self.assing_unit_unyt(part_data[item][abun],item)
+                    test_unyt[item][abun]['Info']  =  {}
+                    test_unyt[item][abun]['Info']['VarDescription'] = item+" from the simulation particle data. The units are in co-moving and units are descrived in the unyt array."             
+                    test_unyt[item][abun]['Info']['aexp-scale-exponent'] = part_data[item][abun]['Info']['aexp-scale-exponent']
+                    test_unyt[item][abun]['Info']['h-scale-exponent'] = part_data[item][abun]['Info']['h-scale-exponent']
+                continue
+
+            else:
+
+                test_unyt[item] = {}
+                test_unyt[item]['Value'] = self.assing_unit_unyt(part_data[item],item)
+                test_unyt[item]['Info']  =  {}
+                test_unyt[item]['Info']['VarDescription'] = item+" from the simulation particle data. The units are in co-moving and units are descrived in the unyt array."             
+                test_unyt[item]['Info']['aexp-scale-exponent'] = part_data[item]['Info']['aexp-scale-exponent']
+                test_unyt[item]['Info']['h-scale-exponent'] = part_data[item]['Info']['h-scale-exponent']
+
+        return test_unyt
+
+    def to_physical(self,variable):
+        '''
+        Convert unyt arrya from comoving to physical
+        '''
+
+        ascale     = (1./(1+self.header["Cosmo"]["Redshift"]))**variable["Info"]["aexp-scale-exponent"]
+
+        # dependence on hubble parameter
+        hscale     = (self.header["Cosmo"]["HubbleParam"])**variable["Info"]["h-scale-exponent"]
+
+
+        return variable['Value']*ascale*hscale
+
+        
+
+
     
     
     
@@ -598,12 +686,17 @@ class ReadEagle:
         header = self.inputfunc.read_group()
  
         # the unit and h-dependence of Eagle is not stated; We assume it is in cMpc/h
-        boxsize  = np.array([1., 1.0, 1.0 ]) * header['BoxSize']
+        boxsize  = np.array([1.0, 1.0, 1.0 ]) * header['BoxSize']
         boxunit  = self.inputfunc.set_unit(vardescription="Extent of simulation volume", 
                                 Lunit=constants['Mpc'], 
                                 aFact=1.0, 
                                 hFact=-1.0)
         box      = {'Value':boxsize, 'Info':boxunit}
+        boxsize  = self.inputfunc.assing_unit_unyt(box,'BoxSize')
+        box      = {'Value':boxsize, 'Info':boxunit}
+        box['Info'].pop('CGSConversionFactor',None)
+
+        
         h        = header['HubbleParam']
         #
         cosmo    = {'Redshift'    : header['Redshift'], 
@@ -618,6 +711,7 @@ class ReadEagle:
                                 aFact=0, 
                                 hFact=0)
         numpart      = {'Value':numpartval,'Info':numpartunit}
+        numpart['Info'].pop('CGSConversionFactor',None)
 
         initMassTable = header['MassTable']
 
@@ -634,11 +728,18 @@ class ReadEagle:
                                 aFact=0, 
                                 hFact=-1)
         DMmass        = {'Value':DMmass,'Info':Dmunit}
+        DMmass  = self.inputfunc.assing_unit_unyt(DMmass,'Masses')
+        DMmass        = {'Value':DMmass,'Info':Dmunit}
+        DMmass['Info'].pop('CGSConversionFactor',None)
+
         Gasmass       = {'Value':Gasmass,'Info':Gmunit}
+        Gasmass  = self.inputfunc.assing_unit_unyt(Gasmass,'Masses')
+        Gasmass       = {'Value':Gasmass,'Info':Gmunit}
+        Gasmass['Info'].pop('CGSConversionFactor',None)
         MassTable     = {'DarkMatterMass':DMmass,'GasMass':Gasmass}
         
         # compute some extra variables
-        H0            = h * 100 * 1e5 / constants["Mpc"]      # H0 in 1/s
+        H0            = h * 100 * 1e5 * unyt.cm / unyt.s / constants["Mpc"]      # H0 in 1/s
         rhoc          = 3*H0**2 / (8*np.pi*constants["Grav"]) # critical density in g/cm^3
         cosmo["H0"]   = H0
         cosmo["rhoc"] = rhoc
@@ -815,6 +916,10 @@ class ReadSwift:
         boxsize   = np.array(header['BoxSize'])
         boxunit   = self.inputfunc.set_unit(vardescription="Extent of simulation volume", Lunit=units['Unit length in cgs (U_L)'][0], aFact=1.0, hFact=0.0) # co-moving, no-h
         box       = {'Value':boxsize, 'Info':boxunit}
+        boxsize  = self.inputfunc.assing_unit_unyt(box,'BoxSize')
+        box      = {'Value':boxsize, 'Info':boxunit}
+        box['Info'].pop('CGSConversionFactor',None)
+        
         #
         H0        = cosmology['H0 [internal units]'][0] / units['Unit time in cgs (U_t)'][0] # in 1/s
         H0        = H0 * constants['Mpc'] / 1e5     # in km/s/Mpc
@@ -832,6 +937,7 @@ class ReadSwift:
                                 aFact=0, 
                                 hFact=0)
         numpart      = {'Value':numpartval,'Info':numpartunit}  
+        numpart['Info'].pop('CGSConversionFactor',None)
 
 
         initMassTable = header['InitialMassTable']
@@ -848,12 +954,20 @@ class ReadSwift:
                                 aFact=0, 
                                 hFact=0)
         DMmass        = {'Value':DMmass,'Info':Dmunit}
+        DMmass  = self.inputfunc.assing_unit_unyt(DMmass,'Masses')
+        DMmass        = {'Value':DMmass,'Info':Dmunit}
+
         Gasmass       = {'Value':Gasmass,'Info':Gmunit}
+
+        Gasmass  = self.inputfunc.assing_unit_unyt(Gasmass,'Masses')
+        Gasmass       = {'Value':Gasmass,'Info':Gmunit}
+        Gasmass['Info'].pop('CGSConversionFactor',None)
+
         MassTable     = {'DarkMatterMass':DMmass,'GasMass':Gasmass}
         
         
         # compute some extra variables
-        H0            = h * 100 * 1e5 / constants["Mpc"]      # H0 in 1/s
+        H0            = h * 100 * 1e5 * unyt.cm / unyt.s / constants["Mpc"]      # H0 in 1/s
         rhoc          = 3*H0**2 / (8*np.pi*constants["Grav"]) # critical density in g/cm^3
         cosmo["H0"]   = H0
         cosmo["rhoc"] = rhoc
@@ -1052,6 +1166,9 @@ class ReadHydrangea:
                                 aFact=1.0, 
                                 hFact=-1.0)
         box      = {'Value':boxsize, 'Info':boxunit}
+        boxsize  = self.inputfunc.assing_unit_unyt(box,'BoxSize')
+        box      = {'Value':boxsize, 'Info':boxunit}
+        box['Info'].pop('CGSConversionFactor',None)
 
         h        = header['HubbleParam']
         #
@@ -1067,7 +1184,7 @@ class ReadHydrangea:
                                 aFact=0, 
                                 hFact=0)
         numpart      = {'Value':numpartval,'Info':numpartunit}
-
+        numpart['Info'].pop('CGSConversionFactor',None)
 
         initMassTable = header['MassTable']
 
@@ -1084,11 +1201,20 @@ class ReadHydrangea:
                                 aFact=0, 
                                 hFact=-1)
         DMmass        = {'Value':DMmass,'Info':Dmunit}
+        DMmass  = self.inputfunc.assing_unit_unyt(DMmass,'Masses')
+        DMmass       = {'Value':DMmass,'Info':Dmunit}
+        DMmass['Info'].pop('CGSConversionFactor',None)
+
+
         Gasmass       = {'Value':Gasmass,'Info':Gmunit}
+        Gasmass  = self.inputfunc.assing_unit_unyt(Gasmass,'Masses')
+        Gasmass       = {'Value':Gasmass,'Info':Gmunit}
+        Gasmass['Info'].pop('CGSConversionFactor',None)
+
         MassTable     = {'DarkMatterMass':DMmass,'GasMass':Gasmass}
                             
         # compute some extra variables
-        H0            = h * 100 * 1e5 / constants["Mpc"]      # H0 in 1/s
+        H0            = h * 100 * 1e5 * unyt.cm / unyt.s / constants["Mpc"]       # H0 in 1/s
         rhoc          = 3*H0**2 / (8*np.pi*constants["Grav"]) # critical density in g/cm^3
         cosmo["H0"]   = H0
         cosmo["rhoc"] = rhoc

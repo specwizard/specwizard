@@ -4,6 +4,7 @@ from os.path import exists
 from os import remove
 import copy
 import h5py
+import unyt
 #
 #from SpecWizard_Elements import Elements
 #from SpecWizard_Input import ReadSnap
@@ -66,11 +67,15 @@ class OpticalDepth_IO:
         #          info = {'Vardescription':'string', 'CGSConvertsionFactor':1, 'h-scale-exponent':1, 'aexp-scale-exponent':1}
 
         # open file
-        hfile  = h5py.File(self.dirname + self.fname, "a")
         
         # create and write dataset
         Values = variable["Value"]
-        hfile.create_dataset(varname, data=Values)
+
+        #hfile.create_dataset(varname, data=Values)
+        just_varname = varname.split('/')[-1]
+        dir_to_group = varname.replace(just_varname,'')
+        Values.write_hdf5(self.dirname + self.fname,dataset_name=just_varname, group_name=dir_to_group)
+        hfile  = h5py.File(self.dirname + self.fname, "a")
         dset   = hfile[varname]
 
         # add attributes

@@ -7,8 +7,7 @@ import copy
 
 from scipy.interpolate import interp1d
 from .SpecWizard_BuildInput import Build_Input
-import .SimulationInputKeys
-import .SimulationInputKeys as Skeys
+from .SimulationInputKeys import get_simkeys
 
 from .SpecWizard_Elements import Elements
 from .SpecWizard_Input import ReadData
@@ -17,6 +16,8 @@ from .Phys import ReadPhys
 constants = ReadPhys()
 from .SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
 from .SpecWizard_Lines import Lines
+from .reading_simulations import InputFunctions
+
 
 class LongSpectra:
     
@@ -34,8 +35,6 @@ class LongSpectra:
         self.pixkms     = 1
         self.npix       = int((self.lambda_max-self.lambda_min)/self.dlambda)
         self.wavelength =  self.lambda_min + (np.arange(self.npix) * self.dlambda) 
-
-        
         self.paper = True
         self.random_los = False
     def vel_from_wv(self,lambda_f,lambda_min,c_kms=1):
@@ -101,7 +100,7 @@ class LongSpectra:
 
         for element,ion in ions_we_want:
             sim_name = self.wizard['file_type']['sim_type']
-            elements_in_sim = Skeys.get_simkeys(sim_name=sim_name)['snapshot']['elementnames']
+            elements_in_sim = get_simkeys(sim_name=sim_name)['snapshot']['elementnames']
             if element in elements_in_sim:
                 if ion in cont_contrib_ions:
                     ions2do.append((element,ion))
@@ -116,7 +115,7 @@ class LongSpectra:
         '''
         aux_wizard = self.wizard.copy()
         sim_type = aux_wizard['file_type']['sim_type']
-        sim_dics  = Skeys.get_simkeys((sim_type))
+        sim_dics  = get_simkeys((sim_type))
         los_dir   = aux_wizard['longspectra']['file_dir']
         file_los = {}
         for i,lfile in enumerate(los_files):
@@ -245,15 +244,15 @@ class LongSpectra:
 
     def insert_in_long_spectra(self,long_spectra,snapshot,projected_LOS,opticaldepth,ions2do,roll=True):
         
-        pixel_kms = snapshot.ToCGS(projected_LOS["pixel_kms"]) / 1e5
+        pixel_kms = snapshot.to_physical(projected_LOS["pixel_kms"])
         npix      = projected_LOS["npix"]
         vel_kms   = np.arange(npix) * pixel_kms 
-        box_cgs   = snapshot.ToCGS(snapshot.header["BoxSize"])[0]       # in proper cm
-        box_kms   = box_cgs * snapshot.Hubble() / 1e5 
+        box_cgs   = snapshot.to_physical(snapshot.header["BoxSize"])[0].in_cgs()       # in proper cm
+        box_kms   = (box_cgs * snapshot.Hubble()).to('km/s')
         z_sim     = snapshot.header['Cosmo']['Redshift']
 
         lambda_min = self.lambda_min
-        c_kms      = constants['c']/ 1e5
+        c_kms      = constants['c'].to('km/s')
         amount_rolled  = 0
         for ion in ions2do:
 
@@ -262,7 +261,7 @@ class LongSpectra:
                     if ion ==  ('Hydrogen', 'H I'):
                         opticaldepth[ion]['Optical depths'] = opticaldepth['SimIons'][ion]['Optical depths']
 
-            tau         = snapshot.ToCGS(opticaldepth[ion]['Optical depths'])
+            tau         = opticaldepth[ion]['Optical depths']['Value']
             lambda0     = opticaldepth[ion]['lambda0']
             fvalue      = opticaldepth[ion]['f-value']
             #We use the periodic boundaries so we can extend 3 times the spectra, this to avoid problems with sharp edges
@@ -283,8 +282,8 @@ class LongSpectra:
             llinelambda_start = lambda0 * (1 +z_sim) 
             llinelambda_end   =  llinelambda_start * np.exp(box_kms/c_kms)
 
-            line_velstart =   self.vel_from_wv(llinelambda_start,lambda_min,c_kms)
-            line_velend   =   self.vel_from_wv(llinelambda_end,lambda_min,c_kms)
+            line_velstart =   self.vel_from_wv(llinelambda_start,lambda_min,c_kms).value
+            line_velend   =   self.vel_from_wv(llinelambda_end,lambda_min,c_kms).value
             velarr_extended = np.linspace(line_velstart-npix,line_velend+npix,3*npix)
 
             rebinned   = self.Rebin(extended_tau,self.velocity_array,velarr_extended)
@@ -314,7 +313,7 @@ class LongSpectra:
         delta_z = self.delta_z
         z_qsr   = self.z_qsr
         z       = 0
-        c_kms      = constants['c'] / 1e5
+        c_kms      = constants['c'].to('km/s')
 
         #We define the long spectra array in velocity space
         velocity_start = 0
@@ -380,9 +379,12 @@ class LongSpectra:
                 
             # We re-scale relevant parameters for the redshift we want, from where on z_sim = z
 
+            self.inputfunc          = InputFunctions(fileparams=wizard, header=snapshot.header)
+
+
             snapshot.header['Cosmo']['Redshift'] = z 
             z_sim     = snapshot.header['Cosmo']['Redshift']
-            box_sim   = snapshot.ToCGS(snapshot.header['BoxSize'])[0]
+            box_sim   = snapshot.to_physical(snapshot.header['BoxSize'])[0].in_cgs()
             #We calculate the extend in redshfit of the sightline
             dz_sim    = (1+z_sim) *  (np.exp(snapshot.Hubble() * box_sim  / constants['c'])-1)
             wizard['z_los']  = {}
@@ -396,7 +398,7 @@ class LongSpectra:
 
     def do_long_spectra(self,coven=[]):
 
-        c_kms      = constants['c'] / 1e5
+        c_kms      = constants['c'].to('km/s')
         self.contaminant_lambda0()
 
         #We define the long spectra array in velocity space
@@ -442,14 +444,13 @@ class LongSpectra:
             wizard['ODParams']['VoigtOff'] = True
             cspec                = ComputeOpticaldepth(wizard)
             opticaldepth         = cspec.MakeAllOpticaldepth(projected_LOS)
-
             long_spectra = self.insert_in_long_spectra(long_spectra,snapshot,projected_LOS,opticaldepth,wizard['ionparams']['Ions'],roll=True)        
         
 
         return long_spectra
     
     def add_contaminants(self,longspectra):
-        c_kms   = constants['c'] / 1e5
+        c_kms   = constants['c'].to('km/s')
         wizard  = self.wizard
         atomdat = wizard['ionparams']['atomfile']
         transitions = Elements(atomdat)
@@ -468,7 +469,7 @@ class LongSpectra:
             strongest_l0 = longspectra['Ions'][(element,ion)]["lambda0"]
             strongest_fv = longspectra['Ions'][(element,ion)]["f-value"]
 
-            velocity_start  = self.vel_from_wv(strongest_l0,self.lambda_min,c_kms)
+            velocity_start  = self.vel_from_wv(strongest_l0,self.lambda_min,c_kms).value
             velstart_indx   = self.find_index(velocity_array,velocity_start)
 
             last_indx      = np.where(longspectra['Ions'][ (element,ion)]["OD"]>0)[0][-1]
@@ -481,7 +482,7 @@ class LongSpectra:
 
                 scale_tau       = tau_strong * (lambda0*fvalue) 
                 temp_tau        = np.zeros_like(longspectra['Ions'][(element,ion)]["OD"])
-                velocity_start  = self.vel_from_wv(lambda0,self.lambda_min,c_kms)
+                velocity_start  = self.vel_from_wv(lambda0,self.lambda_min,c_kms).value
                 scale_tau,velstart_indx,end_indx = self.velocity_index_check(scale_tau,velocity_start,velocity_array,len_arr)
                     
                 temp_tau[velstart_indx:end_indx] = scale_tau
@@ -530,7 +531,7 @@ class LongSpectra:
 
         ll_lambda0 = 912
         hi_lls  =  lines.convolveLymanLimit(hi_phi)
-        c_kms = constants['c']/ 1e5
+        c_kms = constants['c'].to('km/s')
         velocity_start  = self.vel_from_wv(ll_lambda0,1215.6701,c_kms)
 
         hi_lls,velstart_indx,end_indx = self.velocity_index_check(hi_lls,velocity_start,velocity_array,len_arr)
@@ -543,7 +544,7 @@ class LongSpectra:
         return all_lines
         
     def rebin_to_spectrograph(self,long_spectra):
-        c_kms = constants['c'] / 1e5
+        c_kms = constants['c'].to('km/s')
         velocity_array = self.velocity_array
         long_spectra = long_spectra["Ions"]
         wavelength_fine_array = self.lambda_min * np.exp(velocity_array/c_kms)

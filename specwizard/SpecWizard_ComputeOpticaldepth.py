@@ -1,8 +1,10 @@
 import numpy as np
+import unyt
 from .SpecWizard_Elements import Elements
 from .SpecWizard_Lines import Lines
 from .Phys import ReadPhys
 from .reading_simulations import InputFunctions
+
 
 constants = ReadPhys()
 #
@@ -234,8 +236,8 @@ class ComputeOpticaldepth:
                     "Temperatures": spectrum["Temperatures"],
                     "TotalIonColumnDensity": spectrum["TotalIonColumnDensity"],
                     "Mass": weight,
-                    "lambda0": lambda0,
-                    "f-value": f_value
+                    "lambda0": lambda0*unyt.Angstrom,
+                    "f-value": f_value*unyt.dimensionless
                 }
         
         return spectra

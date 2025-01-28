@@ -563,6 +563,7 @@ class InputFunctions:
                     "Temperatures":unyt.K,
                     "SmoothingLengths":unyt.cm,
                     "Abundances":unyt.dimensionless,
+                    "SimulationIonFractions":unyt.dimensionless,
                     "Metallicities":unyt.dimensionless,
                     "StarFormationRate":unyt.g/unyt.s,
                     "BoxSize":unyt.cm}
@@ -575,6 +576,7 @@ class InputFunctions:
                     "Temperatures":unyt.K,
                     "SmoothingLengths":unyt.Mpc,
                     "Abundances":unyt.dimensionless,
+                    "SimulationIonFractions":unyt.dimensionless,
                     "Metallicities":unyt.dimensionless,
                     "StarFormationRate":unyt.Msun/unyt.s,
                     "BoxSize":unyt.Mpc}
@@ -601,7 +603,7 @@ class InputFunctions:
         for item in part_data.keys():
             if item == "Elements":
                 continue
-            if item == "Abundances":
+            if item == "Abundances" or item == "SimulationIonFractions":
                 test_unyt[item] = {}
 
                 for abun in part_data[item]:
@@ -615,7 +617,6 @@ class InputFunctions:
                 continue
 
             else:
-
                 test_unyt[item] = {}
                 test_unyt[item]['Value'] = self.assing_unit_unyt(part_data[item],item)
                 test_unyt[item]['Info']  =  {}
@@ -776,8 +777,8 @@ class ReadEagle:
         
             self.RE_snap = read_eagle.EagleSnapshot(self.fname)
             self.RE_snap.select_region(sim_xmin,sim_xmax,sim_ymin,sim_ymax,sim_zmin,sim_zmax)            
-            SmoothingL = self.RE_snap.read_dataset(0,'SmoothingLength')
-            Positions  = self.RE_snap.read_dataset(0,'Coordinates')
+            SmoothingL = self.RE_snap.read_dataset(0,'SmoothingLength') * unyt.Mpc
+            Positions  = self.RE_snap.read_dataset(0,'Coordinates') * unyt.Mpc
 
 
             mask_x     =  ((Positions[:,sightline['x-axis']]>(xpos-SmoothingL)) & (Positions[:,sightline['x-axis']]<(xpos+SmoothingL)))

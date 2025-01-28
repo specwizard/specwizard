@@ -190,8 +190,8 @@ class SightLineProjection:
             rho_ion[ion]['Velocities']   = {'Value': np.zeros(npix), 'Info': vunit}  # ion-weighted peculiar velocity
             rho_ion[ion]['Temperatures'] = {'Value': np.zeros(npix), 'Info': tunit}  # ion-weigthed temperature
             rho_ion[ion]['Mass']         = self.specparams["ionparams"]["transitionparams"][ion]["Mass"]
-            rho_ion[ion]['lambda0']      = self.specparams["ionparams"]["transitionparams"][ion]["lambda0"]
-            rho_ion[ion]['f-value']      = self.specparams["ionparams"]["transitionparams"][ion]["f-value"]
+            rho_ion[ion]['lambda0']      = self.specparams["ionparams"]["transitionparams"][ion]["lambda0"] *unyt.Angstrom
+            rho_ion[ion]['f-value']      = self.specparams["ionparams"]["transitionparams"][ion]["f-value"] *unyt.dimensionless
 
             
         # determine element fractions
@@ -233,8 +233,8 @@ class SightLineProjection:
                 rho_ion_sim[SimIon]['Velocities']   = {'Value': np.zeros(npix), 'Info': vunit}  # ion-weighted peculiar velocity
                 rho_ion_sim[SimIon]['Temperatures'] = {'Value': np.zeros(npix), 'Info': tunit}  # ion-weigthed temperature
                 rho_ion_sim[SimIon]['Mass']         = self.specparams["ionparams"]["transitionparams"][SimIon]["Mass"]
-                rho_ion_sim[SimIon]['lambda0']      = self.specparams["ionparams"]["transitionparams"][SimIon]["lambda0"]
-                rho_ion_sim[SimIon]['f-value']      = self.specparams["ionparams"]["transitionparams"][SimIon]["f-value"]
+                rho_ion_sim[SimIon]['lambda0']      = self.specparams["ionparams"]["transitionparams"][SimIon]["lambda0"] * unit.Angstrom
+                rho_ion_sim[SimIon]['f-value']      = self.specparams["ionparams"]["transitionparams"][SimIon]["f-value"] * unit.dimensionless
             
         except:
             pass
@@ -403,7 +403,13 @@ class SightLineProjection:
                 mask = rho_ion_sim[SimIon]['Densities']['Value'] > 0
                 rho_ion_sim[SimIon]['Velocities']['Value'][mask] /= rho_ion_sim[SimIon]['Densities']['Value'][mask]
                 rho_ion_sim[SimIon]['Temperatures']['Value'][mask]  /= rho_ion_sim[SimIon]['Densities']['Value'][mask]
-            
+
+                rho_ion_sim[ion]['Densities']['Value'] *= dens_unyts  
+                rho_ion_sim[ion]['Velocities']['Value'] *= vel_unyts
+                rho_ion_sim[ion]['Temperatures']['Value'] *=temp_unyts
+
+
+
             result['SimIon-weighted'] = rho_ion_sim
         except:
             pass

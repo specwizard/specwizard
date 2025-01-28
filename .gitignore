@@ -8,3 +8,6 @@
 .pypirc~checkgit 
 /__pycache__/
 **/__pycache__/
+*.ipynb
+*.yml
+*.hdf5

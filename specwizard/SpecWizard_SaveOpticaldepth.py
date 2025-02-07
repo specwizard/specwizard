@@ -70,6 +70,10 @@ class OpticalDepth_IO:
         
         # create and write dataset
         Values = variable["Value"]
+        # Unyt does not like to read unyt_quantities
+        if isinstance(Values, unyt.unyt_quantity):
+            print(varname)
+            Values = unyt.unyt_array(Values)
 
         #hfile.create_dataset(varname, data=Values)
         just_varname = varname.split('/')[-1]
@@ -113,7 +117,7 @@ class OpticalDepth_IO:
 
         hfile.close()
         
-    def write_to_file(self, projections):
+    def write_shortspectra_to_file(self, projections):
         ''' Add contents of this optical depth data to file     '''
 
         
@@ -235,7 +239,160 @@ class OpticalDepth_IO:
                 self.WriteVariable(projection["pixel_kms"], varname = pix_kms)
 
             # add transition properties for each transition
-            lambda0 = projections["Projection"]["Ion-weighted"][ion]["lambda0"]
+            lambda0 = unyt.unyt_array(projections["Projection"]["Ion-weighted"][ion]["lambda0"])
+            fvalue  = unyt.unyt_array(projections["Projection"]["Ion-weighted"][ion]["f-value"])
+            #
+            info     = {'Vardescription':'Laboratory wavelength', 'h-scale-exponent':0, 'aexp-scale-exponent':0}
+            variable = {'Value': lambda0, 'Info':info}
+            self.WriteVariable(variable, varname = group + '/lambda0')
+            info     = {'Vardescription':'transition strength', 'h-scale-exponent':0, 'aexp-scale-exponent':0}
+            variable = {'Value': fvalue, 'Info':info}    
+            self.WriteVariable(variable, varname = group + '/f-value')            
+            # check for simions
+            if 'SimIons' in opticaldepth.keys():
+                if transition in opticaldepth['SimIons'].keys():
+                    for variable in variables:
+                        self.WriteVariable(opticaldepth['SimIons'][transition][variable], 
+                                group+'/SimIons/' + variable)
+                    self.WriteVariable(opticaldepth['SimIons'][transition]['Optical depths'], 
+                            group+'/SimIons'+'/Optical depths')
+
+            # add optical dept-weighted variables
+            for variable in variables:
+                self.WriteVariable(opticaldepth[transition][variable], 
+                                   group+'/' + variable)
+            self.WriteVariable(opticaldepth[transition]['Optical depths'], 
+                                   group+'/Optical depths')
+            
+             
+            
+        
+        hfile.close()
+
+
+    def write_longspectra_to_file(self, projections):
+        ''' Add contents of this optical depth data to file     '''
+
+        
+        #
+        nsight       = projections["nsight"]
+        info         = self.wizard['sightline']
+        projection   = projections["Projection"]
+        opticaldepth = projections["OpticaldepthWeighted"]
+        
+        # update the number of sightlines done
+        self.nspec += 1
+        
+        # open hdf5 file
+        hfile = h5py.File(self.dirname + self.fname, "a")
+        hfile['Header'].attrs.modify('number_of_sightlines',self.nspec)
+
+
+        # create group for this line of sight
+        groupname = 'LOS_{}'.format(nsight)
+        try:
+            hfile.require_group(groupname)
+        except:
+            print("error: group already exists")
+            hfile.close()
+            return
+
+        # add attributes
+        for key, value in info.items():
+            try:
+                hfile[groupname].attrs[key] = value
+            except:
+                continue
+        Box = groupname + '/Box_kms'
+        self.WriteVariable(info["Boxkms"], varname = Box)
+        
+        #
+        variables    = ['Velocities', 'Densities', 'Temperatures']
+        # create group for each element
+        for element in self.elements:
+            elementgroup = groupname + '/' + element
+            hfile.require_group(elementgroup)
+            
+            # create group for element weighted properties
+            group = elementgroup + '/Element-weighted'
+            
+            if not group in hfile:
+                hfile.require_group(group)
+
+                # add attributes
+                for(key, value) in projection.items():
+                    try:
+                        hfile[group].attrs[key] = value
+                    except:
+                        continue
+                    pix_kms = group + '/' + 'pixel_kms'
+                    self.WriteVariable(projection["pixel_kms"], varname = pix_kms)
+
+                # add element-weighted variables
+                for variable in variables:
+                    self.WriteVariable(projection["Element-weighted"][element][variable], 
+                                       group+'/' + variable)
+                
+        # create ion group for each ion
+        for transition in self.ions:
+            (element, ion) = transition
+            group = groupname + '/' + element + '/' + ion
+            hfile.require_group(group)
+            
+           # ion-weighted properties
+            group = groupname + '/' + element + '/' + ion + '/Ion-weighted'
+            hfile.require_group(group)
+            
+           # add attributes
+            for(key, value) in projection.items():
+                try:
+                    hfile[group].attrs[key] = value
+                except:
+                    continue
+                pix_kms = group + '/' + 'pixel_kms'
+                self.WriteVariable(projection["pixel_kms"], varname = pix_kms)
+            
+            # add ion-weighted variables
+            for variable in variables:
+                self.WriteVariable(projection["Ion-weighted"][ion][variable], 
+                                   group+'/' + variable)
+            # check for simIon 
+            if 'SimIon-weighted' in projection.keys():
+                if ion in projection['SimIon-weighted'].keys():
+                    group = groupname + '/' + element + '/' + ion + '/SimIon-weighted'
+                    hfile.require_group(group)
+                    
+                # add attributes
+                    for(key, value) in projection.items():
+                        try:
+                            hfile[group].attrs[key] = value
+                        except:
+                            continue
+                        pix_kms = group + '/' + 'pixel_kms'
+                        self.WriteVariable(projection["pixel_kms"], varname = pix_kms)
+                    
+                    # add ion-weighted variables
+                    for variable in variables:
+                        self.WriteVariable(projection["SimIon-weighted"][ion][variable], 
+                                        group+'/' + variable)
+                
+
+            
+            # optical depth-weighted properties
+            group = groupname + '/' + element + '/' + ion + '/optical depth-weighted'
+            hfile.require_group(group)
+            
+           # add attributes
+            for(key, value) in projection.items():
+                try:
+                    hfile[group].attrs[key] = value
+                except:
+                    continue
+                pix_kms = group + '/' + 'pixel_kms'
+                self.WriteVariable(projection["pixel_kms"], varname = pix_kms)
+
+            # add transition properties for each transition
+            lambda0 = projections["Projection"]["Ion-weighted"][ion]["lambda0"] 
             fvalue  = projections["Projection"]["Ion-weighted"][ion]["f-value"]
             #
             info     = {'Vardescription':'Laboratory wavelength', 'CGSConvertsionFactor':1e-8, 'h-scale-exponent':0, 'aexp-scale-exponent':0}

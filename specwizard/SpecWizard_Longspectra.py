@@ -4,8 +4,10 @@ import h5py
 import os
 import random as rd
 import copy
-
+import unyt 
 from scipy.interpolate import interp1d
+from scipy.signal import convolve
+
 from .SpecWizard_BuildInput import Build_Input
 from .SimulationInputKeys import get_simkeys
 
@@ -17,6 +19,7 @@ constants = ReadPhys()
 from .SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
 from .SpecWizard_Lines import Lines
 from .reading_simulations import InputFunctions
+from .h1damping import HIDamping
 
 
 class LongSpectra:
@@ -244,6 +247,13 @@ class LongSpectra:
 
     def insert_in_long_spectra(self,long_spectra,snapshot,projected_LOS,opticaldepth,ions2do,roll=True):
         
+
+        def extend_array(arr):
+            extended_arr = np.concatenate((arr,arr))
+            extended_arr = np.concatenate((arr,extended_arr))
+
+            return extended_arr
+            
         pixel_kms = snapshot.to_physical(projected_LOS["pixel_kms"])
         npix      = projected_LOS["npix"]
         vel_kms   = np.arange(npix) * pixel_kms 
@@ -262,12 +272,16 @@ class LongSpectra:
                         opticaldepth[ion]['Optical depths'] = opticaldepth['SimIons'][ion]['Optical depths']
 
             tau         = opticaldepth[ion]['Optical depths']['Value']
+            temp        = opticaldepth[ion]['Velocities']['Value']
+            vel         = opticaldepth[ion]['Temperatures']['Value']
+            dens        = opticaldepth[ion]['Densities']['Value']
             lambda0     = opticaldepth[ion]['lambda0']
             fvalue      = opticaldepth[ion]['f-value']
             #We use the periodic boundaries so we can extend 3 times the spectra, this to avoid problems with sharp edges
-            extended_tau = np.concatenate((tau,tau))
-            extended_tau = np.concatenate((tau,extended_tau))
-            extended_tau  = extended_tau
+            extended_tau = extend_array(tau)
+            extended_temp = extend_array(temp)
+            extended_vel = extend_array(vel)
+            extended_dens = extend_array(dens)
             if roll:
                 if amount_rolled ==0:
                     nindx = len(extended_tau)-1
@@ -286,18 +300,26 @@ class LongSpectra:
             line_velend   =   self.vel_from_wv(llinelambda_end,lambda_min,c_kms).value
             velarr_extended = np.linspace(line_velstart-npix,line_velend+npix,3*npix)
 
-            rebinned   = self.Rebin(extended_tau,self.velocity_array,velarr_extended)
+            rebinned_tau   = self.Rebin(extended_tau,self.velocity_array,velarr_extended)
+            rebinned_temp  = self.Rebin(extended_temp,self.velocity_array,velarr_extended)
+            rebinned_vel   = self.Rebin(extended_vel,self.velocity_array,velarr_extended)
+            rebinned_dens  = self.Rebin(extended_dens,self.velocity_array,velarr_extended)
+
             indx_in    = self.find_index(self.velocity_array,line_velstart)
             indx_fn    = self.find_index(self.velocity_array,line_velend)
             
-            if len(rebinned[indx_in:indx_fn]) == 0:
+            if len(rebinned_tau[indx_in:indx_fn]) == 0:
                 #continue
-                long_spectra['Ions'][ion]["OD"] += 0 # np.zeros_like(long_spectra['Ions'][ion]["OD"])
-                
+                long_spectra['Ions'][ion]["Optical depths"] += 0 # np.zeros_like(long_spectra['Ions'][ion]["OD"])
+                long_spectra['Ions'][ion]["Velocities"] += 0
+                long_spectra['Ions'][ion]["Densities"] += 0
+                long_spectra['Ions'][ion]["Temperatures"] += 0
             else:
-                long_spectra['Ions'][ion]["OD"][indx_in:indx_fn] += rebinned[indx_in:indx_fn]
-            
-            
+                long_spectra['Ions'][ion]["Optical depths"][indx_in:indx_fn] += rebinned_tau[indx_in:indx_fn]
+                long_spectra['Ions'][ion]["Velocities"][indx_in:indx_fn] += rebinned_vel[indx_in:indx_fn] + line_velstart          
+                long_spectra['Ions'][ion]["Temperatures"][indx_in:indx_fn] += rebinned_temp[indx_in:indx_fn]
+                long_spectra['Ions'][ion]["Densities"][indx_in:indx_fn] += rebinned_dens[indx_in:indx_fn]
+
             if long_spectra['Ions'][ion]["lambda0"] == 0:
                 long_spectra['Ions'][ion]["lambda0"] = lambda0 
                 long_spectra['Ions'][ion]["f-value"] = fvalue 
@@ -308,6 +330,7 @@ class LongSpectra:
         '''
         explain what is a coven
         '''
+
 
         wizard = self.wizard
         delta_z = self.delta_z
@@ -425,7 +448,10 @@ class LongSpectra:
 
         for ions in ions2do:
             long_spectra['Ions'][ions] = {}
-            long_spectra['Ions'][ions]["OD"] = long_tau.copy()
+            long_spectra['Ions'][ions]["Optical depths"] = long_tau.copy()
+            long_spectra['Ions'][ions]['Velocities'] = long_tau.copy()
+            long_spectra['Ions'][ions]['Densities'] = long_tau.copy()
+            long_spectra['Ions'][ions]['Temperatures'] = long_tau.copy()
             long_spectra['Ions'][ions]["lambda0"] = 0
             long_spectra['Ions'][ions]["f-value"]= 0
 
@@ -446,6 +472,15 @@ class LongSpectra:
             opticaldepth         = cspec.MakeAllOpticaldepth(projected_LOS)
             long_spectra = self.insert_in_long_spectra(long_spectra,snapshot,projected_LOS,opticaldepth,wizard['ionparams']['Ions'],roll=True)        
         
+        for ions in ions2do:
+            for keys in ["Optical depths","Velocities","Densities","Temperatures"]:
+                value = long_spectra['Ions'][ions][keys]
+                long_spectra['Ions'][ions][keys] = {}
+                long_spectra['Ions'][ions][keys]['Value'] = value * opticaldepth[ions][keys]['Value'].units
+                long_spectra['Ions'][ions][keys]['Info']  = opticaldepth[ions][keys]['Info']
+
+        long_spectra['velocities'] *= unyt.km/unyt.s
+        long_spectra['wavelengths'] *= unyt.Angstrom
 
         return long_spectra
     
@@ -456,7 +491,7 @@ class LongSpectra:
         transitions = Elements(atomdat)
         
         ions2do = (longspectra['Ions']).keys()
-        velocity_array = longspectra['velocities']
+        velocity_array = longspectra['velocities'].value
         lambda0_dic = self.lambda0_dic
         contlambda = self.contaminant_lambda0s
         all_lines =  {}
@@ -472,16 +507,16 @@ class LongSpectra:
             velocity_start  = self.vel_from_wv(strongest_l0,self.lambda_min,c_kms).value
             velstart_indx   = self.find_index(velocity_array,velocity_start)
 
-            last_indx      = np.where(longspectra['Ions'][ (element,ion)]["OD"]>0)[0][-1]
+            last_indx      = np.where(longspectra['Ions'][ (element,ion)]["Optical depths"]['Value'].value>0)[0][-1]
             len_arr        = last_indx-velstart_indx+1
             end_indx       = velstart_indx+len_arr
 
-            tau_strong     = longspectra['Ions'][(element,ion)]["OD"][velstart_indx:end_indx] / (strongest_l0 * strongest_fv)
+            tau_strong     = (longspectra['Ions'][(element,ion)]['Optical depths']['Value'].value)[velstart_indx:end_indx] / (strongest_l0 * strongest_fv)
             
             for (lambda0,fvalue) in linevals:
 
                 scale_tau       = tau_strong * (lambda0*fvalue) 
-                temp_tau        = np.zeros_like(longspectra['Ions'][(element,ion)]["OD"])
+                temp_tau        = np.zeros_like(longspectra['Ions'][ (element,ion)]["Optical depths"]['Value'].value)
                 velocity_start  = self.vel_from_wv(lambda0,self.lambda_min,c_kms).value
                 scale_tau,velstart_indx,end_indx = self.velocity_index_check(scale_tau,velocity_start,velocity_array,len_arr)
                     
@@ -489,19 +524,22 @@ class LongSpectra:
 
                 all_lines[element][lambda0] = temp_tau
             
-            if (element,ion) ==('Hydrogen','H I'):
-               all_lines = self.add_dw_and_lls(all_lines,velocity_array,len_arr)
+ #           if (element,ion) ==('Hydrogen','H I'):
+ #              all_lines = self.add_dw_and_lls(all_lines,velocity_array,len_arr)
             total_tau = np.zeros_like(temp_tau)
             
             for line in all_lines[element].keys():
                 total_tau += all_lines[element][line]
 
             all_lines[element]['total'] = total_tau
-        
+            longspectra['Ions'][ (element,ion)]['Contaminants'] = {}
+            cont_ls = list(all_lines[element].keys())
+            for cont in cont_ls[1:]:
+                longspectra['Ions'][(element,ion)]['Contaminants'][cont] = all_lines[element][cont] * unyt.Dimensionless
         return_dic = {}
         return_dic["Ions"] = {}
         return_dic["Ions"] = all_lines
-        return return_dic
+        return longspectra
         
     def velocity_index_check(self,scale_tau,velocity_start,velocity_array,len_arr):
         if velocity_start < 0:
@@ -519,6 +557,49 @@ class LongSpectra:
                 contr_indx = int(end_indx-velstart_indx)
                 scale_tau = scale_tau[:contr_indx]
         return scale_tau,velstart_indx,end_indx
+
+
+    def add_HI_damping_wings(self,outputs,n=2):
+        
+        velocities  = self.velocity_array
+
+        if n>2 and "Contaminants" not in outputs['Ions'][('Hydrogen', 'H I')].keys():
+            print("Extra transition lines not found you have to run longspectra.add_contaminants")
+            return
+        h1_damp = HIDamping(nmax=30)
+        naturalwidth_kms = h1_damp.DampingVelocity(n).to('km/s').value
+
+        if n==2:
+            tau_h1  = outputs['Ions'][('Hydrogen', 'H I')]['Optical depths']['Value']
+        else:
+            h1_trans = list(outputs['Ions'][('Hydrogen', 'H I')]['Contaminants'].keys())
+            line_indx = n-3
+            tau_h1 =  outputs['Ions'][('Hydrogen', 'H I')]['Contaminants'][h1_trans[line_indx]]
+
+        dv         = 1e-3         # pixel size in km/s
+        vmin       = np.min(velocities)
+        vmax       = np.max(velocities)
+        nbins      = np.array((vmax-vmin)/dv,dtype=int)
+        dv         = (vmax-vmin)/float(nbins)
+        v_convolve = vmin + np.arange(nbins) * dv 
+
+        
+
+        # Create lorentz profile
+        phi_fine    = np.interp(v_convolve, velocities, tau_h1)
+        width       = naturalwidth_kms
+        v_bins      = v_convolve - np.mean(v_convolve)              # centre Lorenz at the centre of the velocity interval
+        lorentz     = (1./np.pi) * width / (v_bins**2 + width**2)   
+        lorentz     = lorentz  / 1e5                               # convert to units of [s/cm]
+
+        # The integral over the Lorentzian is normalized to unity, so that
+        # sum(lorentz) dpix = 1, or the pixel size = 1/np.sum(lorentz)
+        phi_fine    = convolve(phi_fine, lorentz, mode='same') / np.sum(lorentz)
+
+        #
+        result      = np.interp(velocities, v_convolve, phi_fine) 
+
+        return result
 
     def add_dw_and_lls(self,all_lines,velocity_array,len_arr):
         hi_phi = all_lines['Hydrogen'][1215.6701]
@@ -542,7 +623,32 @@ class LongSpectra:
         all_lines['Hydrogen']["Ly_limit_system"] = temp_phi
 
         return all_lines
+
+    def add_limitsystem(self,outputs):
+        velocity_array = self.velocity_array
+        c_kms = constants['c'].to('km/s')
+        velocity_start  = self.vel_from_wv(1215.6701,self.lambda_min,c_kms).value
+        velstart_indx   = self.find_index(velocity_array,velocity_start)
+        tau_h1  = outputs['Ions'][('Hydrogen', 'H I')]['Optical depths']['Value'].value
+
+        last_indx      = np.where(tau_h1>0)[0][-1]
+        len_arr        = last_indx-velstart_indx+1
         
+
+        temp_phi = np.zeros_like(tau_h1).copy()
+        lines = Lines( v_kms =velocity_array ,box_kms=velocity_array.max())
+        ll_lambda0 = 912
+        hi_lls  =  lines.convolveLymanLimit(tau_h1)
+        velocity_start  = self.vel_from_wv(ll_lambda0,1215.6701,c_kms)
+
+        hi_lls,velstart_indx,end_indx = self.velocity_index_check(hi_lls,velocity_start,velocity_array,len_arr)
+
+        temp_phi[velstart_indx:end_indx] = hi_lls
+
+        outputs['Ions'][('Hydrogen', 'H I')]['Contaminants']['Limit_system'] = temp_phi
+
+        return outputs
+
     def rebin_to_spectrograph(self,long_spectra):
         c_kms = constants['c'].to('km/s')
         velocity_array = self.velocity_array

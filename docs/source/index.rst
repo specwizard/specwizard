@@ -19,6 +19,7 @@ Overview
    Installation/index.rst
    Examples/index.rst
    ShortSpectra/shortspectra.rst
+   BuildInput/buildinput.rst
    specwizard
    modules
 

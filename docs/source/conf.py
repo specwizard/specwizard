@@ -20,7 +20,7 @@ release = '1'
 
 extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','sphinx_tabs.tabs','nbsphinx','matplotlib.sphinxext.mathmpl',
           'matplotlib.sphinxext.plot_directive',
-          'sphinx.ext.doctest'
+          'sphinx.ext.doctest','sphinx.ext.mathjax'
         ]
 # Napoleon settings
 napoleon_google_docstring = True

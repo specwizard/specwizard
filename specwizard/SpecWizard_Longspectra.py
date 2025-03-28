@@ -598,8 +598,12 @@ class LongSpectra:
 
         #
         result      = np.interp(velocities, v_convolve, phi_fine) 
+        if n==2:
+            outputs['Ions'][('Hydrogen', 'H I')]['Optical depths']['Value'] = result * unyt.dimensionless
+        else:
+            outputs['Ions'][('Hydrogen', 'H I')]['Contaminants'][h1_trans[line_indx]] = result * unyt.dimensionless
 
-        return result
+        return outputs
 
     def add_dw_and_lls(self,all_lines,velocity_array,len_arr):
         hi_phi = all_lines['Hydrogen'][1215.6701]

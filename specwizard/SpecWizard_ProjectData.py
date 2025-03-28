@@ -153,17 +153,17 @@ class SightLineProjection:
         
         # total density
         rho_tot          = {}
-        rho_tot['Densities']     = {'Value': np.zeros(npix), 'Info': particles['Densities']['Info']}      # density
-        rho_tot['Velocities']    = {'Value': np.zeros(npix), 'Info': particles['Velocities']['Info']}     # density-weighted peculiar velocity
-        rho_tot['Temperatures']  = {'Value': np.zeros(npix), 'Info': particles['Temperatures']['Info']}   # density-weigthed temperatue
+        rho_tot['Densities']     = {'Value': np.zeros(npix), 'Info': particles['Densities']['Info'].copy()}      # density
+        rho_tot['Velocities']    = {'Value': np.zeros(npix), 'Info': particles['Velocities']['Info'].copy()}     # density-weighted peculiar velocity
+        rho_tot['Temperatures']  = {'Value': np.zeros(npix), 'Info': particles['Temperatures']['Info'].copy()}   # density-weigthed temperatue
 
         # element densities
         rho_element             = {}
-        nunit                   = particles['Densities']['Info']
+        nunit                   = particles['Densities']['Info'].copy()
         nunit['VarDescription'] = 'Element mass-densities'
-        vunit                   = particles['Velocities']['Info']
+        vunit                   = particles['Velocities']['Info'].copy()
         vunit["VarDescription"] = 'Element-weighted velocities'
-        tunit                   = particles['Temperatures']['Info']
+        tunit                   = particles['Temperatures']['Info'].copy()
         tunit["VarDesciption"]  = 'Element-weighted temperatures '
 
         # properties per element
@@ -176,11 +176,11 @@ class SightLineProjection:
         
         # ion densities
         rho_ion                 = {}
-        nunit                   = particles['Densities']['Info']
+        nunit                   = particles['Densities']['Info'].copy()
         nunit['VarDescription'] = 'Ion mass-densities'
-        vunit                   = particles['Velocities']['Info']
+        vunit                   = particles['Velocities']['Info'].copy()
         vunit["VarDescription"] = 'Ion-weighted velocities'
-        tunit                   = particles['Temperatures']['Info']
+        tunit                   = particles['Temperatures']['Info'].copy()
         tunit["VarDesciption"]  = 'Ion-weighted temperatures '
 
         # variables per ion
@@ -376,7 +376,7 @@ class SightLineProjection:
             rho_ion[ion]['Temperatures']['Value'] *=temp_unyts
         
         # prepare output
-        unit                   = particles["Positions"]['Info']
+        unit                   = particles["Positions"]['Info'].copy()
         unit["VarDescription"] = 'pixel size'
         pixelsize              = {'Value': pix*unyt.Mpc, 'Info': unit}
         pixelsize_dv           = self.SetUnit(vardescription='Hubble velocity accross pixel', 

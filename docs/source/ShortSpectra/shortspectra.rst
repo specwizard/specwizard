@@ -6,7 +6,7 @@ In this guide we will go through the basic process of using `specwizard.Generate
 
 In order to run this example you would need to have `specwizard` installed, the line transition file and a ionization table. And some simulation data that can be downloaded by:
 
-And the input file that contains the details of what we want to be obtained. Here we have input confifuration for a EAGLE full snapshot and an EAGLE line of sight file. 
+And the input file that contains the details of what we want to be obtained. Here we have input configuration for a EAGLE full snapshot and an EAGLE line of sight file. 
 
 
 
@@ -97,5 +97,5 @@ And the input file that contains the details of what we want to be obtained. Her
         
 For more information about the content we refer you to the BuildInput documentation page. 
 
-
-.. include:: notebooks/ShortSpectra.rst
+.. include:: ShortSpectra.ipynb
+   :parser: myst_nb.docutils_

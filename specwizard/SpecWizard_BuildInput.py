@@ -399,6 +399,17 @@ class Build_Input:
                                                'pixkms': pixkms,
                                                'Veloffset': veloff,
                                                'ReadIonFrac': ReadIonFrac}
+    def output(self,directory= './',fname = 'out.hdf5'):
+        """
+        Set the parameters for the outputfile.
+
+        Args:
+            directory (str): /path/to/save/outfile
+            fname (str): outputfile.hdf5
+        """
+
+        self.specparams['Output'] = {'directory':directory,
+                                     'fname':fname}
 
 
     def non_sense_checks(self, specparams):
@@ -505,6 +516,13 @@ class Build_Input:
             pixelkms = wizard_yml['extraparams']['pixkms']
             read_ion = wizard_yml['extraparams']['ReadIonFrac']
             self.ExtraParams(periodic=True, pixkms=pixelkms, ReadIonFrac=read_ion)
+        except:
+            pass
+        #Read output params
+        try:
+            out_directory = wizard_yml['Output']['directory']
+            out_fname     = wizard_yml['Output']['fname']
+            self.output(directory= out_directory,fname = out_fname)
         except:
             pass
 

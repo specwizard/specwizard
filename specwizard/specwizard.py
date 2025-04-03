@@ -4,6 +4,8 @@ from .SpecWizard_ProjectData import SightLineProjection
 from .SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
 from .SpecWizard_Longspectra import LongSpectra
 from .SpecWizard_SaveOpticaldepth import OpticalDepth_IO
+from .SpecWizard_AnalyseOpticaldepth import Analyse_Opticaldepth
+
 
 def GenerateShortSpectra(Wizard=[]):
 

@@ -5,6 +5,7 @@ from scipy.integrate import cumtrapz, simps
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 from .Phys import ReadPhys
+import unyt 
 
 constants = ReadPhys()
 
@@ -60,15 +61,23 @@ class Analyse_Opticaldepth:
 
             # determine number of pixels for each sight line
             self.variable = 'LOS_0/' + self.element + '/' + self.ion + '/' + 'optical depth-weighted'
+
             self.npix = hfile[self.variable].attrs.get("npix")
 
             # determine pixel size
-            self.pix_kms = hfile[self.variable + '/pixel_kms'][...]
+            try:
+                self.pix_kms = unyt.unyt_array.from_hdf5(fname,dataset_name='pixel_kms',group_name=self.variable)
+            except:
+                self.pix_kms = hfile[self.variable + '/pixel_kms'][...]
 
             # determine length of spectrum
-            self.box_kms = self.ReadVariable('LOS_0/Box_kms')
-            self.box_kms = self.box_kms['Value']
-                    # create velocity array
+            try:
+                self.box_kms = unyt.unyt_array.from_hdf5(fname,dataset_name='Box_kms', group_name='LOS_0')
+            except:
+                self.box_kms = self.ReadVariable('LOS_0/Box_kms')
+                self.box_kms = self.box_kms['Value']
+
+            # create velocity array
             self.vHubble = np.arange(self.npix) * self.pix_kms
 
     def ReadHeader(self):
@@ -99,9 +108,16 @@ class Analyse_Opticaldepth:
 
     def ReadVariable(self, varname='Header/Box'):
         info = self.ReadGroup(groupname=varname)
-        hfile = h5py.File(self.dirname + self.fname, "r")
-        values = np.array(hfile[varname][...])
-        hfile.close()
+        try:
+            data_name = varname.split("/")[-1]
+            group_name = varname[:-len(data_name)]
+            values     = unyt.unyt_array.from_hdf5(self.dirname + self.fname,dataset_name=data_name,group_name=group_name)
+            del info['unit_registry']
+            del info['units']
+        except:
+            hfile = h5py.File(self.dirname + self.fname, "r")
+            values = np.array(hfile[varname][...])
+            hfile.close()
         return {'Value': values, 'Info': info}
 
     def read_optical_depths(self):
@@ -121,13 +137,19 @@ class Analyse_Opticaldepth:
         # Create an array to store results
         result = []
         var_path = f'LOS_{0}/{self.element}/{self.ion}/optical depth-weighted/'
-        self.line_f0 = hfile[var_path+'f-value'][...]
-        self.line_l0 = hfile[var_path+'lambda0'][...]
+        self.line_f0 = self.ReadVariable(var_path+'f-value')
+        self.line_l0 = self.ReadVariable(var_path+'lambda0')
+
+        # self.line_f0 = hfile[var_path+'f-value'][...]
+        # self.line_l0 = hfile[var_path+'lambda0'][...]
         # Iterate over sightlines and read optical depths
         for sight in np.arange(self.nsight):
             try:
+                 
                 varname = f'LOS_{sight}/{self.element}/{self.ion}/optical depth-weighted/Optical depths'
-                values = np.array(hfile[varname][...])
+                OD = self.ReadVariable(varname)
+                values = OD['Value']
+#                values = np.array(hfile[varname][...])
                 result.append(values)
             except KeyError:
                 print(f"Warning! Problem reading sightline #{sight}")

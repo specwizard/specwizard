@@ -72,7 +72,6 @@ class OpticalDepth_IO:
         Values = variable["Value"]
         # Unyt does not like to read unyt_quantities
         if isinstance(Values, unyt.unyt_quantity):
-            print(varname)
             Values = unyt.unyt_array(Values)
 
         #hfile.create_dataset(varname, data=Values)

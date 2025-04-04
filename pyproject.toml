@@ -29,6 +29,7 @@ dependencies = [
     "bs4",
     "pyyaml",
     "h5py",
+    "requests",
     "astropy"
 ]
 

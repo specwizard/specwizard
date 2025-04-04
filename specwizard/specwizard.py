@@ -5,7 +5,10 @@ from .SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth
 from .SpecWizard_Longspectra import LongSpectra
 from .SpecWizard_SaveOpticaldepth import OpticalDepth_IO
 from .SpecWizard_AnalyseOpticaldepth import Analyse_Opticaldepth
-
+from .SpecWizard_Atomfile import Atomfile
+from .SpecWizard_read_obs_data import read_obs_data
+from .Phys import ReadPhys
+#constants = Phys.ReadPhys()
 
 def GenerateShortSpectra(Wizard=[]):
 

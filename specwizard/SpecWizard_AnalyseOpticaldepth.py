@@ -48,8 +48,6 @@ class Analyse_Opticaldepth:
         
         else:
             self.header = self.ReadHeader()
-
-            print("Using output file")
             fname = self.dirname + '/' + self.fname
             hfile = h5py.File(fname, 'r')
 
@@ -748,9 +746,9 @@ class Analyse_Opticaldepth:
         Returns:
             float: Sigma parameter for the line decomposition.
         """
-        line_f     = self.line_f0
-        line_l0    = self.line_l0
+        line_f     = self.line_f0['Value']
+        line_l0    = self.line_l0['Value']
         sigmaT     = constants['sigmaT']
 
         sigma_line   = np.sqrt(3*np.pi*sigmaT/8) * line_f * line_l0 * 1e-8 * constants['c']
-        return sigma_line
+        return sigma_line.value

@@ -30,6 +30,7 @@ dependencies = [
     "pyyaml",
     "h5py",
     "requests",
+    "html5lib",
     "astropy"
 ]
 

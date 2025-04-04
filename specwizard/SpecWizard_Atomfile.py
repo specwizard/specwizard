@@ -14,7 +14,7 @@ class Atomfile:
     """
 
 
-    def __init__(self,do_all_elements=False):
+    def __init__(self,do_all_elements=False,elements_to_do=None):
         """
         Initializes the Atomfile class by setting up URLs for the NIST database and generating an atomic directory.
         
@@ -38,6 +38,10 @@ class Atomfile:
                 element_short = [ mendeleev.element(name).symbol for name in element_names]
                 element_num_states = [ getattr(mendeleev,elmt).atomic_number for elmt in element_short]
 		
+        elif isinstance(elements_to_do, list):
+                element_short  =  elements_to_do
+                element_names  =  [ getattr(mendeleev,elmt).name for elmt in element_short]
+                element_num_states = [ getattr(mendeleev,elmt).atomic_number for elmt in element_short]
 
         else:
                 element_short  = ['H', 'He', 'C', 'N', 'O', 'Ne', 'Mg', 'Si', 'S', 'Ca', 'Fe']
@@ -185,7 +189,7 @@ class Atomfile:
         
         return ground_state        
 
-    def create_hdf5_from_nist(self,file_name="atom_dat.hdf5", wavelength_low_lim=200.0,wavelength_upper_lim=8000.0,wavelength_resolution=0.1):
+    def create_hdf5_from_nist(self,file_name="atom_file.hdf5", wavelength_low_lim=200.0,wavelength_upper_lim=8000.0,wavelength_resolution=0.1):
         """
         Creates an HDF5 file containing atomic transition data queried from the NIST database.
         

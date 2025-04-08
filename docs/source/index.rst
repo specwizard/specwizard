@@ -20,6 +20,7 @@ Overview
    Examples/index.rst
    ShortSpectra/shortspectra.rst
    BuildInput/buildinput.rst
+   Atomfile/atom_constructed.ipynb
    specwizard
    modules
 

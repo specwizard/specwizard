@@ -189,7 +189,7 @@ class Atomfile:
         
         return ground_state        
 
-    def create_hdf5_from_nist(self,file_name="atom_file.hdf5", wavelength_low_lim=200.0,wavelength_upper_lim=8000.0,wavelength_resolution=0.1):
+    def create_hdf5_from_nist(self,file_name="atom_file.hdf5", wavelength_low_lim=200.0,wavelength_upper_lim=8000.0,wavelength_resolution=0.1,verbose=False):
         """
         Creates an HDF5 file containing atomic transition data queried from the NIST database.
         
@@ -200,7 +200,7 @@ class Atomfile:
             wavelength_resolution (float): Spectral resolution in Ångströms.
         """
         atom_dictionary = self.atom_dictionary
-
+        self.verbose  = verbose
         self.wavelength_low = wavelength_low_lim
         self.wavelength_high = wavelength_upper_lim
         self.delta_lambda    = wavelength_resolution
@@ -208,14 +208,15 @@ class Atomfile:
 
         for element_name in atom_dictionary.keys():
             for ion_name in atom_dictionary[element_name]["lines"]:
-
-                print("Writting "+element_name+ " "+ ion_name+ "...")
+                if self.verbose:
+                    print("Writting "+element_name+ " "+ ion_name+ "...")
                 try:
                     lines, line_url= self.get_nist_line(ion2do=ion_name)
                 except Exception as exc:
 
                     #print(traceback.format_exc())
-                    print (ion_name+':', exc)
+                    if self.verbose:
+                        print (ion_name+':', exc)
         
                     continue
         
@@ -261,7 +262,7 @@ class Atomfile:
                     source_url = ion_group.create_dataset('url',data = line_url)
                     source_url.attrs['VarDescription'] = 'URL that was used to query the NIST database '
         atomh5.close()
-    
+        print("Done!")
     def add_line_to_hdf5(self,file_name="atom_dat.hdf5",element_name="Oxygen",ion_name="O VII",fvalue=0.696,lambda0=21.601690):
         """
         Adds a line for a specific ion to an HDF5 file.
@@ -275,7 +276,8 @@ class Atomfile:
         """
         
         atomh5 = h5py.File(file_name,"a")
-        print("Adding "+ion_name+" with fval: "+str(fvalue)+" lambda0: "+str(lambda0)+" to: "+file_name)
+        if self.verbose:
+            print("Adding "+ion_name+" with fval: "+str(fvalue)+" lambda0: "+str(lambda0)+" to: "+file_name)
         if element_name not in atomh5.keys():
             atomh5.create_group(element_name)
             
@@ -351,7 +353,8 @@ class Atomfile:
         intensities = np.array([float(self.clean_rel_ints(lines[:,1][i])) for i in range(len(lines))])
 
         if not all(intensities == 0.0):
-            print("Found most intense")
+            if self.verbose:
+                print("Found most intense")
             most_intense_indx = np.argsort(intensities)[::-1][0]
             strong_line = lines[most_intense_indx]
         strong_line = None         

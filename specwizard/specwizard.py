@@ -8,6 +8,8 @@ from .SpecWizard_AnalyseOpticaldepth import Analyse_Opticaldepth
 from .SpecWizard_Atomfile import Atomfile
 from .SpecWizard_read_obs_data import read_obs_data
 from .Phys import ReadPhys
+from .SpecWizard_Elements import Elements
+
 #constants = Phys.ReadPhys()
 
 def GenerateShortSpectra(Wizard=[]):

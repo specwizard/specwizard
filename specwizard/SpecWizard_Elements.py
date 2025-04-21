@@ -80,7 +80,7 @@ class Elements:
                     weight       = getattr(mendeleev,'H').atomic_weight
                 else:
                     weight       = getattr(mendeleev,element_chsym).atomic_weight
-                nstates  = len(element_ions)
+                nstates  = getattr(mendeleev,element_chsym).electrons
                 states   = {}
                 for ion in element_ions:
                     name  = ion

@@ -12,26 +12,28 @@ from .Phys import ReadPhys
 
 
 class Run_cloudy:
-	def __init__(self):
-		cloudycode    = '/cosma7/data/dp004/dc-aram1/softw/cloudy/c23.00/source/cloudy.exe'   # cloudy executable
+	def __init__(self,cloudy_yml='cloudy.yml'):
+
+		with open(cloudy_yml) as file:
+			cloudy_yml = yaml.load(file, Loader=yaml.FullLoader)
+
+		cloudycode    = cloudy_yml['cloudycode']
 
 		# Adapt the following line to point to a directory that cloudy can use to store intermediate results. These may be large,
 		# so you may want to use /tmp or similar
-		cloudyindir   = '/cosma/home/dp004/dc-aram1/workdir7/cloud' 
-
-		cloudyUVB     = 'HM12'#'HM12'                                                          # Builtin Haardt & Madau 2012 UV background
-		cloudycompo   = '"solar_GASS10.abn" no grains'                                  # Builtin abundance of elements, no grains
-		cloudyscale   = 0.0001                                                          # 0.01 % of the MW ISM abundance
-		cloudyhdf5dir = 'HM01Tables'                                                    # directory containing .hdf5 tables
-		zgrid     = {"min":1.0,  "max":1.5,   "step":0.25}                                 # redshift range: start, end, step
-		LogTgrid  = {"min":3.8,  "max":5.0,  "step":0.1}                                # log10(T[k}]) range: start, end, step
-		LognHgrid = {"min":-7., "max":-3.0, "step":0.1}                                  # log10(nH(1/cm^3)) total hydrogen number density: start, end, step
+		cloudyindir   = cloudy_yml['cloudyindir']
+		cloudyUVB     = cloudy_yml['cloudyUVB']                                                          # Builtin Haardt & Madau 2012 UV background
+		cloudycompo   = cloudy_yml['cloudycompo']                                 # Builtin abundance of elements, no grains
+		cloudyscale   = cloudy_yml['cloudyscale']                                                      # 0.01 % of the MW ISM abundance
+		cloudyhdf5dir = cloudy_yml['cloudyhdf5dir']                                                    # directory containing .hdf5 tables
+		zgrid     = cloudy_yml['zgrid']                                 # redshift range: start, end, step
+		LogTgrid  = cloudy_yml['LogTgrid']                          # log10(T[k}]) range: start, end, step
+		LognHgrid = cloudy_yml['LognHgrid']                                 # log10(nH(1/cm^3)) total hydrogen number density: start, end, step
 		cloudytestgrid   = {'z':zgrid, 'LogT':LogTgrid, 'LognH':LognHgrid}              # cloudygrid of values of (z, LogT and LognH to be computed)
-		
 		self.cloudyrun    = {'grid':cloudytestgrid, 'code':cloudycode, 'indir':cloudyindir, 'compo':cloudycompo, 'element scale factor':cloudyscale, 'UVB':cloudyUVB, 'hdf5dir':cloudyhdf5dir} 
-		self.elements_to_do =['Hydrogen', 'Helium', 'Carbon','Oxygen','Nitrogen','Neon','Silicon','Calcium','Magnesium']# ['Hydrogen', 'Helium', 'Carbon']#,'Oxygen','Nitrogen','Neon','Silicon']#Magnesium, 'Sulfur', 'Calcium']
+		self.elements_to_do = cloudy_yml['elements_to_calculate']
 		self.physconst  = ReadPhys()
-		self.elements = Elements("atom_info.hdf5")
+		self.elements = Elements(cloudy_yml['atom_file'])
 
 	def create_files(self):
 		z_range = self.CloudyRange("z")

@@ -9,6 +9,7 @@ import scipy.integrate as integrate
 import roman
 from .SpecWizard_Elements import Elements
 from .Phys import ReadPhys
+import yaml 
 
 
 class Run_cloudy:
@@ -34,6 +35,17 @@ class Run_cloudy:
 		self.elements_to_do = cloudy_yml['elements_to_calculate']
 		self.physconst  = ReadPhys()
 		self.elements = Elements(cloudy_yml['atom_file'])
+		self.check_nstates()
+	
+	def check_nstates(self):
+		total_nstates = 0
+
+		for element in self.elements_to_do: 
+			if element == 'Sulphur':
+				element = 'Sulfur'
+			total_nstates += self.elements.ElementParameters([element])[element]['Nstates']
+		if total_nstates >100:
+			print("Cloudy Warning! The limit to the number of SAVE options is 100.  Increase LIMPUN in save.h if more are needed. Sorry.")
 
 	def create_files(self):
 		z_range = self.CloudyRange("z")

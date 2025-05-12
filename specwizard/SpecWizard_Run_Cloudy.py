@@ -45,11 +45,12 @@ class Run_cloudy:
 				element = 'Sulfur'
 			total_nstates += self.elements.ElementParameters([element])[element]['Nstates']
 		if total_nstates >100:
-			print("Cloudy Warning! The limit to the number of SAVE options is 100.  Increase LIMPUN in save.h if more are needed. Sorry.")
+			print("Cloudy Warning! (in case you haven't made this modification) The limit to the states number of SAVE options is 100.  Increase LIMPUN in save.h if more are needed. Sorry.")
 
 	def create_files(self):
 		z_range = self.CloudyRange("z")
 		for z in z_range:
+			print(" ... Running cloudy for z= "+str(z))
 			name = self.write_cloudy_z_file(z)
 			self.run_cloudy(name,z)
 
@@ -59,7 +60,6 @@ class Run_cloudy:
 		command = 'cd {0:s};export OMP_NUM_THREADS=8; {1:s} -r {2:s}; cd'.format(cloudyrun["indir"],cloudyrun["code"],fname)
 		start_time = time.time()
 		stream     = os.popen(command)
-		print(command)
 		output     = stream.read()
 		end_time   = time.time()
 		duration   = end_time - start_time
@@ -119,7 +119,6 @@ class Run_cloudy:
 			#    elementpars = Elements.ElementParameters()
 		for element in self.elements_to_do:
 				# number of ionization states
-			print(element)
 			if element=='Sulphur':
 				nstates = elements.ElementParameters(['Sulfur'])['Sulfur']["Nstates"]
 			else:
@@ -142,7 +141,6 @@ class Run_cloudy:
 		command = 'echo "test" | {}'.format(self.cloudyrun["code"])
 		stream = os.popen(command)
 		output = stream.read()
-		print(output)
 
 
 	def CloudyRange(self,variable='LogT'):
@@ -151,7 +149,7 @@ class Run_cloudy:
 		maxval   = cloudygrid[variable]["max"]
 		step     = cloudygrid[variable]["step"]
 		result   = np.arange(minval, maxval+step, step)
-		return result[result <= maxval+1e-1]
+		return result[result <= maxval+0.5e-2]#+1e-1]
 
 	def write_cloudy_tables_to_hdf5(self,saveheat=True,savecontiniuum=True,saveabundances=True):
 		UVB             = self.cloudyrun["UVB"]
@@ -274,7 +272,10 @@ class Run_cloudy:
 		CloudyRange = self.CloudyRange
 		cloudyrun   = self.cloudyrun
 		for element in self.elements_to_do:
-			pars      = elements.ElementParameters([element])[element]
+			if element=='Sulphur':
+				pars = elements.ElementParameters(['Sulfur'])['Sulfur']
+			else:
+				pars = elements.ElementParameters([element])[element]
 			name    =   list(pars["States"].keys())[0].split(" ")[0]
 			nlevels   = pars['Nstates']
 			result    = np.zeros((len(CloudyRange("z")), len(CloudyRange("LogT")), len(CloudyRange("LognH"))))
@@ -359,7 +360,7 @@ class Run_cloudy:
 		# returns: incident spectrum, in the form of
 		#  hnu: photon energy in erg
 		#  nufnu: continuum in erg/cm^2/s
-
+		cloudyrun       = self.cloudyrun
 		name            = self.UVB_name + "_z{0:2.2f}".format(z)
 		basename        = cloudyrun["indir"] + '/' + name
 		files = [['ovr', basename + '.ovr'], ['ion', basename + '.ion'], ['cont', basename + ".cont"], ['heat', basename + ".heat"]] # read overview file (.ovr) and ionization stages file (.ion)
@@ -443,7 +444,7 @@ class Run_cloudy:
 		# total cooling rate, Ctot [erg/cm^3/s]
 		# fractional contributions to Htot from H1, He1 and He2 photo-ionization, and from Compton heating (Comp)
 		name            = self.UVB_name + "_z{0:2.2f}".format(z)
-		basename        = cloudyrun["indir"] + '/' + name
+		basename        = self.cloudyrun["indir"] + '/' + name
 		files = [['ovr', basename + '.ovr'], ['ion', basename + '.ion'], ['cont', basename + ".cont"], ['heat', basename + ".heat"]] # read overview file (.ovr) and ionization stages file (.ion)
 		
 
@@ -472,6 +473,8 @@ class Run_cloudy:
 			#
 			while line:
 				line    = fp.readline()
+				if 'lv' in line:
+					continue
 				if line:
 					nHindx  = np.mod(indx, nLognHs)
 					Tindx   = ((indx - nHindx) / nLognHs).astype(int)
@@ -561,6 +564,7 @@ class Run_cloudy:
 		# for element = 'Hydrogen' and level=0, the function return the 2D grid of log_10 (n_HI/n_H)     .. ie log of the HI fraction
 		# for element = 'Carbon', and level=3,  the function return the 2D grid of log_10 (n_C3+/n_C)    .. ie log of the CarbonIV fraction
 		#   note: for Hydrogen, level=3 refers to molecular Hydrogen
+		cloudyrun        = self.cloudyrun
 		name            = self.UVB_name + "_z{0:2.2f}".format(z)
 		basename        = cloudyrun["indir"] + '/' + name
 		files = [['ovr', basename + '.ovr'], ['ion', basename + '.ion'], ['cont', basename + ".cont"], ['heat', basename + ".heat"]] # read overview file (.ovr) and ionization stages file (.ion)

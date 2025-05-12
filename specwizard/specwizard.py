@@ -8,6 +8,8 @@ from .SpecWizard_AnalyseOpticaldepth import Analyse_Opticaldepth
 from .SpecWizard_Atomfile import Atomfile
 from .SpecWizard_read_obs_data import read_obs_data
 from .Phys import ReadPhys
+from .SpecWizard_Run_Cloudy import Run_cloudy
+from .SpecWizard_IonTables import IonTables
 from .SpecWizard_Elements import Elements
 
 #constants = Phys.ReadPhys()

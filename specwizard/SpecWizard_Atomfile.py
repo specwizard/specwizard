@@ -212,6 +212,7 @@ class Atomfile:
                     print("Writting "+element_name+ " "+ ion_name+ "...")
                 try:
                     lines, line_url= self.get_nist_line(ion2do=ion_name)
+                    
                 except Exception as exc:
 
                     #print(traceback.format_exc())
@@ -363,44 +364,54 @@ class Atomfile:
         wavelengths = lines[:,0].astype('float')[wave_mask]
 
 
-
         ii=0
         lines_found = []
         delta_lambda =  self.delta_lambda 
-        while ii<len(wavelengths):
-            # we group the wavelengths that are within certain some ranges in this case 0.1
-            mask_indx = np.where(abs((wavelengths[ii]-wavelengths))<delta_lambda)[0]
-            nsublines = len(mask_indx)
-            lines_wv_masked  = lines[wave_mask][mask_indx]
-            # In the Nist data base sometimes we have two close wavelengths and the sum of them we identify them so we take the summed ones instead of them
-            condition_array = np.array([lines_wv_masked[i][-3:]==["X","0","0"] for i in range(nsublines)]) 
-            pattern_to_have = np.array([False,True,True])
-            is_in_list = np.all(pattern_to_have == condition_array, axis=1)
-            
-            
-            # If we find the summed line we take it and ignore the other lines. 
-            if any(is_in_list):
-        #        print("summed line found")
-        #        print(lines[wave_mask][mask1_indx][is_in_list])
-                lines_found.append(lines_wv_masked[is_in_list])
-                ii += nsublines
-            else:
-                if nsublines == 1:
-                    lines_found.append(lines_wv_masked)
-                else:
-                    fvalue_first = float(lines_wv_masked[0][3])
-                    while len(lines_wv_masked)>1:
-                        fvalue_first += float(lines_wv_masked[1][3])
-                        lines_wv_masked = np.delete(lines_wv_masked,1,0)
+        lines_wv_masked  = lines[wave_mask]
 
-                    lines_wv_masked[0][3] = str(fvalue_first)
-                    lines_found.append(lines_wv_masked)
-                ii += nsublines                                          
+        filter_doubles = np.array([ s[-3].isdigit() for s in lines_wv_masked ])
+        if ion2do == 'H I':
+
+            lines_found = lines_wv_masked[filter_doubles]
+
+        else:
+            while ii<len(wavelengths):
+                # we group the wavelengths that are within certain some ranges in this case 0.1
+                mask_indx = np.where(abs((wavelengths[ii]-wavelengths))<delta_lambda)[0]
+                nsublines = len(mask_indx)
+                lines_wv_masked  = lines[wave_mask][mask_indx]
+                # In the Nist data base sometimes we have two close wavelengths and the sum of them we identify them so we take the summed ones instead of them
+                condition_array = np.array([lines_wv_masked[i][-3:]==["X","0","0"] for i in range(nsublines)]) 
+                pattern_to_have = np.array([False,True,True])
+                is_in_list = np.all(pattern_to_have == condition_array, axis=1)
+                
+                
+                # If we find the summed line we take it and ignore the other lines. 
+                if any(is_in_list):
+            #        print("summed line found")
+            #        print(lines[wave_mask][mask1_indx][is_in_list])
+                    lines_found.append(lines_wv_masked[is_in_list])
+                    ii += nsublines
+                else:
+                    if nsublines == 1:
+                        lines_found.append(lines_wv_masked)
+                    else:
+                        fvalue_first = float(lines_wv_masked[0][3])
+                        while len(lines_wv_masked)>1:
+                            fvalue_first += float(lines_wv_masked[1][3])
+                            lines_wv_masked = np.delete(lines_wv_masked,1,0)
+
+                        lines_wv_masked[0][3] = str(fvalue_first)
+                        lines_found.append(lines_wv_masked)
+                    ii += nsublines                                          
+            lines_found = np.array(lines_found)       
 
         fvals_float = np.vstack(lines_found)[:,3].astype('float')
         wvvals_float = np.vstack(lines_found)[:,0].astype('float')
         maxfval_indx = np.argsort(fvals_float*wvvals_float)[::-1]
-        if lines_found:
+
+        
+        if lines_found.size != 0:       
         
             lines_fval_sorted = np.vstack(lines_found)[maxfval_indx]
         

@@ -8,6 +8,7 @@ import swiftsimio as sw
 import pyread_eagle as read_eagle
 import hydrangea as hy
 from .SimulationInputKeys import get_simkeys
+import copy
 from .SpecWizard_Elements import Elements
 
 # physical constants in cgs units
@@ -339,8 +340,12 @@ class InputFunctions:
             IonFracs = {}
             colfile    = h5py.File(self.fname,'r')
             col_ions   = colfile['SubgridScheme']['NamedColumns']['SpeciesFractions'][...].astype('str')
+
+#            print((1./(1+self.header["Cosmo"]["Redshift"]))**particles['Densities']['Info']["aexp-scale-exponent"])
+            handy_dens = copy.deepcopy(particles['Densities'])
+            handy_dens['Value'] = self.assing_unit_unyt(particles['Densities'],'Densities')
             Abundances = particles['Abundances']
-            dens_cgs   = self.to_physical(self.assing_unit_unyt(particles['Densities'],'Densities')).in_cgs()
+            dens_cgs   = self.to_physical(handy_dens).in_cgs()
             nH         = dens_cgs * Abundances['Hydrogen']['Value'] / constants['mH']
 
             col_ions_formated = np.array([self.FormatTxt(col_ion) for col_ion in col_ions])
@@ -1008,12 +1013,12 @@ class ReadSwift:
             swif_mask = sw.mask(self.fname)
             Sboxsize = swif_mask.metadata.boxsize[0]
             oneMpc =  Sboxsize/Sboxsize.value                   #Since swiftsimIO uses units we have to 
-            load_region = [[sim_xmin*oneMpc,sim_xmax*oneMpc],[sim_ymin*oneMpc,sim_ymax*oneMpc],[sim_zmin*oneMpc,sim_zmax*oneMpc]]
+            load_region = [[sim_xmin.value*oneMpc,sim_xmax.value*oneMpc],[sim_ymin.value*oneMpc,sim_ymax.value*oneMpc],[sim_zmin.value*oneMpc,sim_zmax.value*oneMpc]]
             swif_mask.constrain_spatial(load_region)
 
             self.SW_snap = sw.load(self.fname, mask=swif_mask)
-            SmoothingL = self.SW_snap.gas.smoothing_lengths.value
-            Positions  = self.SW_snap.gas.coordinates.value
+            SmoothingL = self.SW_snap.gas.smoothing_lengths
+            Positions  = self.SW_snap.gas.coordinates
 
 
             mask_x     =  ((Positions[:,sightline['x-axis']]>(xpos-SmoothingL)) & (Positions[:,sightline['x-axis']]<(xpos+SmoothingL)))

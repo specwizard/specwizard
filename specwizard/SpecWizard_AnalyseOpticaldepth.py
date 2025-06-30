@@ -1,7 +1,6 @@
 import h5py
 import numpy as np
 import random
-from scipy.integrate import cumtrapz, simps
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 from .Phys import ReadPhys

@@ -1,11 +1,8 @@
 import h5py
 import numpy as np
 import random
-<<<<<<< HEAD
 from scipy.integrate import cumulative_trapezoid as cumtrapz
 from scipy.integrate import simpson as simps
-=======
->>>>>>> e5e9ffcf6dc9de1f5f59781ef1efbee0884a652d
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 from .Phys import ReadPhys

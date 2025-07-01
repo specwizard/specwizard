@@ -4,6 +4,7 @@ import numpy as np
 import scipy.special as special
 import scipy.integrate as integrate
 import scipy.interpolate as interpolate
+from scipy.integrate import cumulative_trapezoid as cumtrapz
 import matplotlib.pyplot as plt
 fontsize = 20
 
@@ -109,7 +110,7 @@ class ColumnTable:
         for (ind,b) in zip(indxs, bs):
             q     = np.sqrt(b**2+zs**2)
             w     = self.kernel(q)
-            integ = integrate.cumtrapz(w, zs, initial=0)
+            integ = cumtrapz(w, zs, initial=0)
             values[ind][:] = integ
         return (bs, zs), values
 

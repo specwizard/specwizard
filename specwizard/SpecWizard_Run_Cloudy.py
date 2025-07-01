@@ -156,7 +156,7 @@ class Run_cloudy:
 		words           = UVB.split(maxsplit=1)
 		nwords          = len(words)
 		line            = []
-		numeric         = '[-+]? (?: (?: \d* \. \d+ ) | (?: \d+ \.? ) )(?: [Ee] [+-]? \d+ ) ?'
+		numeric         = r'[-+]? (?: (?: \d* \. \d+ ) | (?: \d+ \.? ) )(?: [Ee] [+-]? \d+ ) ?'
 		self.numeric    = numeric
 		self.rx         = re.compile(numeric, re.VERBOSE)
 

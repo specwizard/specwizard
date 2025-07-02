@@ -67,7 +67,15 @@ class Lines:
         return fnew    
 
     @accepts(column_densities=length**-2,b_kms=length/time,vion_kms=length/time,Tions=temperature)
-    def gaussian(self, column_densities = 0, b_kms = 0,vion_kms=0,Tions= 0):
+    def gaussian(self, column_densities = 0, b_kms = 0,vion_kms=0,Tions= 0, mass_densities=0):
+        '''
+            column_density = ion column density in ions / cm^2
+            density        = mass density of the gas
+            b_kms          = line-width parameter
+            vion_kms       = peculiar velocity
+            Tions          = temperature of the gas
+            mass_densities = (total) density of the gas 
+        '''
 
         naturalwidth_kms = self.naturalwidth    # natural line width        [km/s]
         f_value      = self.f_value
@@ -92,11 +100,11 @@ class Lines:
 
         #strip units for performance 
         col_dens_unit, no_unyt_column_densities = column_densities.in_cgs().units, column_densities.in_cgs().value
-        b_unit, no_unyt_b_kms   = b_kms.in_cgs().units, b_kms.in_cgs().value
-        vion_unit, no_unyt_vion_kms = vion_kms.in_cgs().units, vion_kms.in_cgs().value
-        T_unit, no_unyt_Tions    = Tions.in_cgs().units, Tions.in_cgs().value
-        
-        for column_density, b, vel,Tion in zip(no_unyt_column_densities, no_unyt_b_kms, no_unyt_vion_kms,no_unyt_Tions):
+        b_unit, no_unyt_b_kms          = b_kms.in_cgs().units, b_kms.in_cgs().value
+        vion_unit, no_unyt_vion_kms    = vion_kms.in_cgs().units, vion_kms.in_cgs().value
+        T_unit, no_unyt_Tions          = Tions.in_cgs().units, Tions.in_cgs().value
+        d_unit, no_unyt_mass_densities = mass_densities.in_cgs().units, mass_densities.in_cgs().value
+        for column_density, b, vel, Tion, mass_density in zip(no_unyt_column_densities, no_unyt_b_kms, no_unyt_vion_kms,no_unyt_Tions, no_unyt_mass_densities):
             if column_density >0:
                 # scale b-parameter
                 v_line = b * verf
@@ -106,18 +114,19 @@ class Lines:
                 g_int   = column_density * sigma * self.IDinterpol(no_unyt_pixel_velocity_kms - vel, v_line, erf, cumulative=True) 
                 # add
                 tau          += g_int
-                densities    += g_int * column_density
+                densities    += g_int * mass_density
                 velocities   += g_int * vel
                 temperatures += g_int * Tion            
 
         # normalize to pixel size
-        pix_cms = self.pix_kms.in_cgs().value
-        tau /= pix_cms
-        densities /= pix_cms
-        velocities /= pix_cms
+        pix_cms       = self.pix_kms.in_cgs().value
+        tau          /= pix_cms
+        velocities   /= pix_cms
         temperatures /= pix_cms
+        densities    /= pix_cms
+        
         # Give back units 
-        densities    *= col_dens_unit 
+        densities    *= d_unit 
         velocities   *= vion_unit 
         temperatures *= T_unit
         nint = self.npix
@@ -135,16 +144,28 @@ class Lines:
             densities    = densities[nint:2*nint] 
             velocities   = velocities[nint:2*nint]
             temperatures = temperatures[nint:2*nint]            
-        mask = tau > 0 
-        #Normalize optical depth quantities 
+        mask = tau > 0
+        
+        #Normalize optical depth-weighted  quantities 
         densities[mask]     /=  tau[mask]
         velocities[mask]    /=  tau[mask]
         temperatures[mask]  /=  tau[mask]
         
 
         # compute total column density
-        
         nh_tot = np.cumsum(tau)[-1] * pix_cms / self.sigma.in_cgs()
+
+        # Set units for velocities, temperatures and densities
+        vunit        = self.SetUnit(vardescription="Tau weighted ion peculiar velocity", aFact=0.0, hFact=0.0)
+        velocities   = {'Value': velocities, 'Info': vunit}
+        tunit        = self.SetUnit(vardescription="Tau weighted ion temperature", aFact=0.0, hFact=0.0)
+        temperatures = {'Value': temperatures, 'Info': tunit}
+        dunit        = self.SetUnit(vardescription="Tau weighted mass density", aFact=0.0, hFact=0.0)
+        densities    = {'Value': densities, 'Info': dunit}
+        tauunit      = self.SetUnit(vardescription="Ionic optical depth", aFact=0.0, hFact=0.0)
+        tau          = {'Value': tau, 'Info': tauunit}
+
+        
         spectrum = {'pixel_velocity_kms':pixel_velocity_kms,
             'optical_depth':tau,
             'optical_depth_densities':densities,
@@ -316,5 +337,26 @@ class Lines:
         result  = np.interp(vel_kms, vel, tau_LL)
 
         #
-        return result    
+        return result
+        
+    def SetUnit(self, vardescription='text describing variable',  aFact=1.0, hFact=1.0):
+        ''' 
+        Set the unit and conversion factors for a variable based on its length, scale, and Hubble parameter dependencies.
+    
+        Args:
+            vardescription (str, optional): A description of the variable. Defaults to 'text describing variable'.
+            aFact (float, optional): The exponent factor for the expansion scale (a). Defaults to 1.0.
+            hFact (float, optional): The exponent factor for the Hubble parameter (h). Defaults to 1.0.
+    
+        Returns:
+            dict: A dictionary containing:
+                - 'VarDescription': Description of the variable.
+                - 'aexp-scale-exponent': Exponent for the scale factor a.
+                - 'h-scale-exponent': Exponent for the Hubble parameter h.
+        '''
+        return {
+            'VarDescription': vardescription, 
+            'aexp-scale-exponent': aFact, 
+            'h-scale-exponent': hFact
+        }
         

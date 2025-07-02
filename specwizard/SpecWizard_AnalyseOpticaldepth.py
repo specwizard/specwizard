@@ -1,8 +1,6 @@
 import h5py
 import numpy as np
 import random
-from scipy.integrate import cumulative_trapezoid as cumtrapz
-from scipy.integrate import simpson as simps
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 from .Phys import ReadPhys

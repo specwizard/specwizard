@@ -103,6 +103,7 @@ class ComputeOpticaldepth:
         
         Ions = self.specparams["ionparams"]["Ions"]
         projectionIW = projection["Projection"]["Ion-weighted"]
+        projectionIW['Densities'] = projected_los['Mass-weighted']['Densities'] # total density
         
         #If extend is true it will introduce the projected spectra into a larger zero's array so we can observe large effects of for exmaple a galaxy
         extend = self.specparams['sightline']['ProjectionExtend']
@@ -125,7 +126,11 @@ class ComputeOpticaldepth:
                         temp_array = np.zeros_like(extended_vel_kms)
                         temp_array[start_indx:start_indx+npix] = projectionSimIon[ion][key]['Value'].copy()
                         projectionSimIon[ion][key]['Value'] = temp_array
-
+                    
+            temp_array = np.zeros_like(extended_vel_kms)
+            temp_array[start_indx:start_indx+npix] = projectionIW['Densities']['Value'].copy()
+            projectionIW['Densities']['Value'] = temp_array
+    
             sightparams['vel_kms'] = extended_vel_kms
             sightparams['sight_kms'] = extended_vel_kms.max()
         
@@ -193,14 +198,14 @@ class ComputeOpticaldepth:
             This method computes the optical depth spectra for each ion based on the given projection and sightline parameters.
             It allows for modification of velocities and temperatures if specified.
         '''
-        header = self.header
-        spectra = {}
-        vel_kms = sightparams['vel_kms']
-        vunit = self.SetUnit(vardescription='Hubble velocity', aFact=0, hFact=0)
-        
+        header    = self.header
+        spectra   = {}
+        vel_kms   = sightparams['vel_kms']
+        vunit     = self.SetUnit(vardescription='Hubble velocity', aFact=0, hFact=0)
+        densities = projection['Densities']['Value']
         for ion in Ions:
             (element_name, ion_name) = ion
-            weight = self.transitions[ion_name]["Mass"] * self.constants["amu"]
+            weight  = self.transitions[ion_name]["Mass"] * self.constants["amu"]
             lambda0 = self.transitions[ion_name]["lambda0"]
             f_value = self.transitions[ion_name]["f-value"]
             
@@ -224,6 +229,7 @@ class ComputeOpticaldepth:
                     nions=nions, 
                     vions_kms=vions, 
                     Tions=Tions,
+                    mass_densities=densities,
                     element_name=element_name
                 )
                 
@@ -245,7 +251,7 @@ class ComputeOpticaldepth:
     
     def MakeOpticaldepth(self, sightparams={'sight_kms': 0.0, 'vel_kms': [0.0], 'pixel_kms': 1.0, 'pixel': 1.0},
                         weight=1.67382335232e-24, lambda0=1215.67, f_value=0.4164, 
-                        nions=[0.0], vions_kms=[0.0], Tions=[0.0], element_name='Hydrogen'):
+                        nions=[0.0], vions_kms=[0.0], Tions=[0.0], mass_densities=[0.0], element_name='Hydrogen'):
         ''' 
         Compute the optical depth for a given transition based on ionic density, temperature, and peculiar velocity.
 
@@ -261,6 +267,7 @@ class ComputeOpticaldepth:
             nions (list of float, optional): Array of ionic densities in particles/cm^3. Defaults to [0.0].
             vions_kms (list of float, optional): Array of ionic velocities in km/s. Defaults to [0.0].
             Tions (list of float, optional): Array of ionic temperatures in K. Defaults to [0.0].
+            mass_densities (list of float, optional): Array of mass densities. Defaults to [0.0]
             element_name (str, optional): Name of the element (e.g., 'Hydrogen'). Defaults to 'Hydrogen'.
 
         Returns:
@@ -305,31 +312,32 @@ class ComputeOpticaldepth:
         voffset_kms = self.specparams['ODParams']['Veloffset']  # Default = 0 
         vions_tot_kms = vions_kms + vHubble_kms+ voffset_kms
         
-        spectrum = lines.gaussian(column_densities=ioncolumns, b_kms=bions_kms, vion_kms=vions_tot_kms, Tions=Tions)
+        spectrum = lines.gaussian(column_densities=ioncolumns, b_kms=bions_kms, vion_kms=vions_tot_kms, Tions=Tions, mass_densities=mass_densities)
 
         tau = spectrum['optical_depth']
 #        print("lines out:",tau.units)
-        densities = spectrum['optical_depth_densities']
-        velocities = spectrum['optical_depth_velocities']
-        temperatures = spectrum['optical_depth_temperatures']
+        densities        = spectrum['optical_depth_densities']
+        velocities       = spectrum['optical_depth_velocities']
+        temperatures     = spectrum['optical_depth_temperatures']
         pixel_velocities = spectrum['pixel_velocity_kms']
 
         # Apply Voigt for hydrogen profile convolution if required
         if not self.VoigtOff and element_name == "Hydrogen":
-            tau = lines.convolvelorentz(tau)
+            tau['Value'] = lines.convolvelorentz(tau['Value'])
  #       print("convol out",tau.units)
-        # Set units and convert mass density
-        dunit = self.SetUnit(vardescription="Tau weighted ion mass density", aFact=0.0, hFact=0.0)
-        densities *= weight  # Convert to mass density
-        densities = {'Value': densities, "Info": dunit}
         
-        # Set units for velocities and temperatures
-        vunit = self.SetUnit(vardescription="Tau weighted ion peculiar velocity", aFact=0.0, hFact=0.0)
-        velocities = {'Value': velocities, 'Info': vunit}
-        tunit = self.SetUnit(vardescription="Tau weighted ion temperature", aFact=0.0, hFact=0.0)
-        temperatures = {'Value': temperatures, 'Info': tunit}
-        tauunit = self.SetUnit(vardescription="Ionic optical depth", aFact=0.0, hFact=0.0)
-        tau = {'Value': tau, 'Info': tauunit}
+        # # Set units and convert mass density
+        # dunit     = self.SetUnit(vardescription="Tau weighted gas mass density", aFact=0.0, hFact=0.0)
+        # densities *= weight  # Convert to mass density
+        # densities = {'Value': densities, "Info": dunit}
+        
+        # # Set units for velocities and temperatures
+        # vunit = self.SetUnit(vardescription="Tau weighted ion peculiar velocity", aFact=0.0, hFact=0.0)
+        # velocities = {'Value': velocities, 'Info': vunit}
+        # tunit = self.SetUnit(vardescription="Tau weighted ion temperature", aFact=0.0, hFact=0.0)
+        # temperatures = {'Value': temperatures, 'Info': tunit}
+        # tauunit = self.SetUnit(vardescription="Ionic optical depth", aFact=0.0, hFact=0.0)
+        # tau = {'Value': tau, 'Info': tauunit}
 
         return {
             'Optical depths': tau, 

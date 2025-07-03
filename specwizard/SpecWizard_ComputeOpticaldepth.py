@@ -103,7 +103,6 @@ class ComputeOpticaldepth:
         
         Ions = self.specparams["ionparams"]["Ions"]
         projectionIW = projection["Projection"]["Ion-weighted"]
-        projectionIW['Densities'] = projected_los['Mass-weighted']['Densities'] # total density
         
         #If extend is true it will introduce the projected spectra into a larger zero's array so we can observe large effects of for exmaple a galaxy
         extend = self.specparams['sightline']['ProjectionExtend']
@@ -114,7 +113,7 @@ class ComputeOpticaldepth:
             start_indx = int(0.5 * npix * (extended_factor - 1))
             
             for ion in projectionIW.keys():
-                for key in ['Densities', 'Velocities', 'Temperatures']:
+                for key in ['Densities', 'Velocities', 'Temperatures', 'MassDensities']:
                     temp_array = np.zeros_like(extended_vel_kms)
                     temp_array[start_indx:start_indx+npix] = projectionIW[ion][key]['Value'].copy()
                     projectionIW[ion][key]['Value'] = temp_array
@@ -122,14 +121,10 @@ class ComputeOpticaldepth:
             if 'SimIon-weighted' in projection["Projection"].keys():
                 projectionSimIon = projection["Projection"]['SimIon-weighted']
                 for ion in projectionSimIon.keys():
-                    for key in ['Densities', 'Velocities', 'Temperatures']:
+                    for key in ['Densities', 'Velocities', 'Temperatures','MassDensities']:
                         temp_array = np.zeros_like(extended_vel_kms)
                         temp_array[start_indx:start_indx+npix] = projectionSimIon[ion][key]['Value'].copy()
                         projectionSimIon[ion][key]['Value'] = temp_array
-                    
-            temp_array = np.zeros_like(extended_vel_kms)
-            temp_array[start_indx:start_indx+npix] = projectionIW['Densities']['Value'].copy()
-            projectionIW['Densities']['Value'] = temp_array
     
             sightparams['vel_kms'] = extended_vel_kms
             sightparams['sight_kms'] = extended_vel_kms.max()
@@ -202,7 +197,7 @@ class ComputeOpticaldepth:
         spectra   = {}
         vel_kms   = sightparams['vel_kms']
         vunit     = self.SetUnit(vardescription='Hubble velocity', aFact=0, hFact=0)
-        densities = projection['Densities']['Value']
+        #
         for ion in Ions:
             (element_name, ion_name) = ion
             weight  = self.transitions[ion_name]["Mass"] * self.constants["amu"]
@@ -211,9 +206,10 @@ class ComputeOpticaldepth:
             
             if lambda0 > 0:
                 # Convert properties to CGS units
-                nions = self.to_physical(projection[ion_name]["Densities"]).in_cgs() / weight
-                vions = self.to_physical(projection[ion_name]["Velocities"]).in_cgs().to("km/s")
-                Tions = self.to_physical(projection[ion_name]["Temperatures"]).in_cgs()
+                nions     = self.to_physical(projection[ion_name]["Densities"]).in_cgs() / weight
+                vions     = self.to_physical(projection[ion_name]["Velocities"]).in_cgs().to("km/s")
+                Tions     = self.to_physical(projection[ion_name]["Temperatures"]).in_cgs()
+                densities = self.to_physical(projection[ion_name]["MassDensities"]).in_cgs()
                 
                 # Modify velocities and temperatures if desired
                 if vel_mod:
@@ -284,14 +280,14 @@ class ComputeOpticaldepth:
             - Hubble velocity and velocity offsets are added to the ion velocities when computing the spectrum.
             - For hydrogen, the Lorentzian convolution is applied to the optical depth if Voigt profiles are enabled.
         '''
-        box_kms = sightparams['sight_kms']
-        vel_kms = sightparams['vel_kms']
-        pixel_kms = sightparams['pixel_kms']
-        pixel = sightparams['pixel']
-        npix = len(vel_kms)
-        tau = np.zeros_like(vel_kms)
-        densities = np.zeros_like(vel_kms)
-        velocities = np.zeros_like(vel_kms)  
+        box_kms      = sightparams['sight_kms']
+        vel_kms      = sightparams['vel_kms']
+        pixel_kms    = sightparams['pixel_kms']
+        pixel        = sightparams['pixel']
+        npix         = len(vel_kms)
+        tau          = np.zeros_like(vel_kms)
+        densities    = np.zeros_like(vel_kms)
+        velocities   = np.zeros_like(vel_kms)  
         temperatures = np.zeros_like(vel_kms)
 
         # Set up the line properties and boundary conditions

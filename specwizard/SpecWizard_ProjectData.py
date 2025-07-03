@@ -146,9 +146,9 @@ class SightLineProjection:
         int_zmaxs    = ((particles['Positions']['Value'][:,2].value + h - shift_in_z) / pix).astype(int) + 1
 
 
-        dens_unyts = particles['Densities']["Value"].units
-        vel_unyts = particles['Velocities']["Value"].units
-        temp_unyts =particles['Temperatures']["Value"].units
+        dens_unyts  = particles['Densities']["Value"].units
+        vel_unyts   = particles['Velocities']["Value"].units
+        temp_unyts  = particles['Temperatures']["Value"].units
         # interpolated values along the sight line
         
         # total density
@@ -165,6 +165,7 @@ class SightLineProjection:
         vunit["VarDescription"] = 'Element-weighted velocities'
         tunit                   = particles['Temperatures']['Info'].copy()
         tunit["VarDesciption"]  = 'Element-weighted temperatures '
+        runit                   = self.SetUnit(vardescription="Ion-weighted total gas density", aFact=0.0, hFact=0.0)
 
         # properties per element
         for element in elementnames:
@@ -185,13 +186,14 @@ class SightLineProjection:
 
         # variables per ion
         for (element, ion) in ions:
-            rho_ion[ion]                 = {}
-            rho_ion[ion]['Densities']    = {'Value': np.zeros(npix), 'Info': nunit}  # ion mass density
-            rho_ion[ion]['Velocities']   = {'Value': np.zeros(npix), 'Info': vunit}  # ion-weighted peculiar velocity
-            rho_ion[ion]['Temperatures'] = {'Value': np.zeros(npix), 'Info': tunit}  # ion-weigthed temperature
-            rho_ion[ion]['Mass']         = self.specparams["ionparams"]["transitionparams"][ion]["Mass"]
-            rho_ion[ion]['lambda0']      = self.specparams["ionparams"]["transitionparams"][ion]["lambda0"] *unyt.Angstrom
-            rho_ion[ion]['f-value']      = self.specparams["ionparams"]["transitionparams"][ion]["f-value"] *unyt.dimensionless
+            rho_ion[ion]                  = {}
+            rho_ion[ion]['Densities']     = {'Value': np.zeros(npix), 'Info': nunit}  # ion mass density
+            rho_ion[ion]['Velocities']    = {'Value': np.zeros(npix), 'Info': vunit}  # ion-weighted peculiar velocity
+            rho_ion[ion]['Temperatures']  = {'Value': np.zeros(npix), 'Info': tunit}  # ion-weigthed temperature
+            rho_ion[ion]['MassDensities'] = {'Value': np.zeros(npix), 'Info': runit}  # ion-weigthed mass density
+            rho_ion[ion]['Mass']          = self.specparams["ionparams"]["transitionparams"][ion]["Mass"]
+            rho_ion[ion]['lambda0']       = self.specparams["ionparams"]["transitionparams"][ion]["lambda0"] * unyt.Angstrom
+            rho_ion[ion]['f-value']       = self.specparams["ionparams"]["transitionparams"][ion]["f-value"] * unyt.dimensionless
 
             
         # determine element fractions
@@ -200,6 +202,8 @@ class SightLineProjection:
         hydrogenfraction = (self.to_physical(particles["Abundances"]["Hydrogen"]).in_cgs()).value                                                             
         nH_cgs           = (self.to_physical(particles['Densities']).in_cgs() * hydrogenfraction / constants["mH"]).value
         temperature      = (self.to_physical(particles['Temperatures']).in_cgs()).value
+        density, density_unit  = (self.to_physical(particles['Densities']).in_cgs()).value, (self.to_physical(particles['Densities']).in_cgs()).units
+        #              
         Z                = (self.to_physical(particles['Metallicities']).in_cgs()).value
         redshift         = header["Cosmo"]["Redshift"] + np.zeros_like(temperature)
         for element in elementnames:
@@ -327,10 +331,10 @@ class SightLineProjection:
             for (element, ion) in ions:
                 diff = mdiff * ParticleAbundances[element]["massfraction"][i] * ComputedIonFractions[ion][i]
                 #
-                rho_ion[ion]['Densities']['Value'][intz]    += diff
-                rho_ion[ion]['Velocities']['Value'][intz]   += diff * vz[i]
-                rho_ion[ion]['Temperatures']['Value'][intz] += diff * temperature[i]
-            
+                rho_ion[ion]['Densities']['Value'][intz]     += diff
+                rho_ion[ion]['Velocities']['Value'][intz]    += diff * vz[i]
+                rho_ion[ion]['Temperatures']['Value'][intz]  += diff * temperature[i]
+                rho_ion[ion]['MassDensities']['Value'][intz] += diff * density[i]
             try:
                 Ions2do = np.array([ions[i][1] for i in range(len(ions))])
                 maskindx = np.where(np.in1d(Ions2do,SimIons))[0]
@@ -350,9 +354,9 @@ class SightLineProjection:
         rho_tot['Velocities']['Value'][mask]   /= rho_tot['Densities']['Value'][mask]
         rho_tot['Temperatures']['Value'][mask] /= rho_tot['Densities']['Value'][mask]
 
-        rho_tot['Densities']['Value'] *= dens_unyts  
-        rho_tot['Velocities']['Value'] *= vel_unyts
-        rho_tot['Temperatures']['Value'] *=temp_unyts      
+        rho_tot['Densities']['Value']    *= dens_unyts  
+        rho_tot['Velocities']['Value']   *= vel_unyts
+        rho_tot['Temperatures']['Value'] *= temp_unyts      
 
         for element in elementnames:
 
@@ -360,20 +364,22 @@ class SightLineProjection:
             rho_element[element]['Velocities']['Value'][mask]   /=  rho_element[element]['Densities']['Value'][mask]
             rho_element[element]['Temperatures']['Value'][mask] /=  rho_element[element]['Densities']['Value'][mask]
 
-            rho_element[element]['Densities']['Value']   *= dens_unyts  
+            rho_element[element]['Densities']['Value']    *= dens_unyts
             rho_element[element]['Velocities']['Value']   *= vel_unyts
-            rho_element[element]['Temperatures']['Value'] *=temp_unyts      
+            rho_element[element]['Temperatures']['Value'] *= temp_unyts      
 
 
         for (element, ion) in ions:            
 
             mask = rho_ion[ion]['Densities']['Value'] > 0
-            rho_ion[ion]['Velocities']['Value'][mask]    /= rho_ion[ion]['Densities']['Value'][mask]
-            rho_ion[ion]['Temperatures']['Value'][mask]  /= rho_ion[ion]['Densities']['Value'][mask]
+            rho_ion[ion]['Velocities']['Value'][mask]     /= rho_ion[ion]['Densities']['Value'][mask]
+            rho_ion[ion]['MassDensities']['Value'][mask]  /= rho_ion[ion]['Densities']['Value'][mask]
+            rho_ion[ion]['Temperatures']['Value'][mask]   /= rho_ion[ion]['Densities']['Value'][mask]
 
-            rho_ion[ion]['Densities']['Value'] *= dens_unyts  
-            rho_ion[ion]['Velocities']['Value'] *= vel_unyts
-            rho_ion[ion]['Temperatures']['Value'] *=temp_unyts
+            rho_ion[ion]['Densities']['Value']     *= dens_unyts  
+            rho_ion[ion]['Velocities']['Value']    *= vel_unyts
+            rho_ion[ion]['MassDensities']['Value'] *= density_unit 
+            rho_ion[ion]['Temperatures']['Value']  *= temp_unyts
         
         # prepare output
         unit                   = particles["Positions"]['Info'].copy()
@@ -401,12 +407,14 @@ class SightLineProjection:
             
             for SimIon in SimIons:
                 mask = rho_ion_sim[SimIon]['Densities']['Value'] > 0
-                rho_ion_sim[SimIon]['Velocities']['Value'][mask] /= rho_ion_sim[SimIon]['Densities']['Value'][mask]
-                rho_ion_sim[SimIon]['Temperatures']['Value'][mask]  /= rho_ion_sim[SimIon]['Densities']['Value'][mask]
+                rho_ion_sim[SimIon]['Velocities']['Value'][mask]     /= rho_ion_sim[SimIon]['Densities']['Value'][mask]
+                rho_ion_sim[SimIon]['Temperatures']['Value'][mask]   /= rho_ion_sim[SimIon]['Densities']['Value'][mask]
+                rho_ion_sim[SimIon]['MassDensities']['Value'][mask]  /= rho_ion_sim[SimIon]['Densities']['Value'][mask]
 
-                rho_ion_sim[ion]['Densities']['Value'] *= dens_unyts  
-                rho_ion_sim[ion]['Velocities']['Value'] *= vel_unyts
-                rho_ion_sim[ion]['Temperatures']['Value'] *=temp_unyts
+                rho_ion_sim[ion]['Densities']['Value']        *= dens_unyts
+                rho_ion_sim[SimIon]['MassDensities']['Value'] *= density_unit                
+                rho_ion_sim[ion]['Velocities']['Value']       *= vel_unyts
+                rho_ion_sim[ion]['Temperatures']['Value']     *= temp_unyts
 
 
 

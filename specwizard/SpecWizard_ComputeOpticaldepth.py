@@ -292,7 +292,7 @@ class ComputeOpticaldepth:
 
         # Set up the line properties and boundary conditions
         lines = Lines(v_kms=vel_kms, box_kms=box_kms, constants=self.constants, verbose=False, 
-                    lambda0_AA=lambda0, f_value=f_value, periodic=self.periodic)
+                    lambda0_AA=lambda0, f_value=f_value, periodic=self.periodic,SetUnit = self.SetUnit)
         
         # Convert from density to column density
         ioncolumns = nions * pixel  # in ions/cm^2
@@ -344,8 +344,8 @@ class ComputeOpticaldepth:
         }
 
 
-
-    def SetUnit(self, vardescription='text describing variable',  aFact=1.0, hFact=1.0):
+    @staticmethod
+    def SetUnit(vardescription='text describing variable',  aFact=1.0, hFact=1.0):
         ''' 
         Set the unit and conversion factors for a variable based on its length, scale, and Hubble parameter dependencies.
 

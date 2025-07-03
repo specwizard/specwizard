@@ -10,6 +10,7 @@ from .Phys import ReadPhys
 constants = ReadPhys()
 from unyt.dimensions import length, time, mass, temperature
 from unyt import accepts
+#from .SpecWizard_ComputeOpticaldepth import ComputeOpticaldepth as CO
 
 # convolve(in1, in2, mode='full', method='auto')[source]
 class Lines:
@@ -20,7 +21,7 @@ class Lines:
     '''
 
     def __init__(self, v_kms =0.0, box_kms=-1.0, constants=constants, lambda0_AA=1215.67, f_value=0.4164,
-                 naturalwidth_kms=6.06076e-3,verbose=False, periodic=True):
+                 naturalwidth_kms=6.06076e-3,verbose=False, periodic=True,SetUnit=None):
 
         self.constants    = constants
         self.verbose      = verbose
@@ -33,6 +34,7 @@ class Lines:
         self.f_value      = f_value            # oscillator strength       [dimensionless]
         self.naturalwidth = naturalwidth_kms    # natural line width        [km/s]self.
         self.sigma        = self.constants["c"] * np.sqrt(3*np.pi*self.constants["sigmaT"] /8.) * self.f_value * self.lambda0
+        self.SetUnit      = SetUnit
     def errfunc(self):
         # tabulated error function
         pix     = 1e-2
@@ -339,24 +341,4 @@ class Lines:
         #
         return result
         
-    def SetUnit(self, vardescription='text describing variable',  aFact=1.0, hFact=1.0):
-        ''' 
-        Set the unit and conversion factors for a variable based on its length, scale, and Hubble parameter dependencies.
-    
-        Args:
-            vardescription (str, optional): A description of the variable. Defaults to 'text describing variable'.
-            aFact (float, optional): The exponent factor for the expansion scale (a). Defaults to 1.0.
-            hFact (float, optional): The exponent factor for the Hubble parameter (h). Defaults to 1.0.
-    
-        Returns:
-            dict: A dictionary containing:
-                - 'VarDescription': Description of the variable.
-                - 'aexp-scale-exponent': Exponent for the scale factor a.
-                - 'h-scale-exponent': Exponent for the Hubble parameter h.
-        '''
-        return {
-            'VarDescription': vardescription, 
-            'aexp-scale-exponent': aFact, 
-            'h-scale-exponent': hFact
-        }
         

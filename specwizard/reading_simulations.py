@@ -1021,9 +1021,9 @@ class ReadSwift:
             Positions  = self.SW_snap.gas.coordinates
 
 
-            mask_x     =  ((Positions[:,sightline['x-axis']]>(xpos-SmoothingL)) & (Positions[:,sightline['x-axis']]<(xpos+SmoothingL)))
-            mask_y     =  ((Positions[:,sightline['y-axis']]>(ypos-SmoothingL)) & (Positions[:,sightline['y-axis']]<((ypos+SmoothingL))))
-            mask_z     =  ((Positions[:,sightline['z-axis']]>zpos) & (Positions[:,sightline['z-axis']]<((zpos+los_length))))
+            mask_x     =  ((Positions[:,sightline['x-axis']]>(-SmoothingL+xpos)) & (Positions[:,sightline['x-axis']]<(SmoothingL+xpos)))
+            mask_y     =  ((Positions[:,sightline['y-axis']]>(-SmoothingL+ypos)) & (Positions[:,sightline['y-axis']]<((SmoothingL+ypos))))
+            mask_z     =  ((Positions[:,sightline['z-axis']]>zpos) & (Positions[:,sightline['z-axis']]<((los_length+zpos))))
 
             self.los_mask = np.where((mask_x) & (mask_y) & (mask_z))[0]
 

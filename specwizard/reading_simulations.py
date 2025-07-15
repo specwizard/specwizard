@@ -920,7 +920,7 @@ class ReadSwift:
         cosmology = self.inputfunc.read_group('Cosmology')
         units     = self.inputfunc.read_group('Units')
         boxsize   = np.array(header['BoxSize'])
-        boxunit   = self.inputfunc.set_unit(vardescription="Extent of simulation volume", Lunit=units['Unit length in cgs (U_L)'][0], aFact=1.0, hFact=0.0) # co-moving, no-h
+        boxunit   = self.inputfunc.set_unit(vardescription="Extent of simulation volume", Lunit=units['Unit length in cgs (U_L)'], aFact=1.0, hFact=0.0) # co-moving, no-h
         box       = {'Value':boxsize, 'Info':boxunit}
         boxsize  = self.inputfunc.assing_unit_unyt(box,'BoxSize')
         box      = {'Value':boxsize, 'Info':boxunit}
@@ -929,7 +929,7 @@ class ReadSwift:
         #
         H0        = cosmology['H0 [internal units]'][0] / units['Unit time in cgs (U_t)'][0] # in 1/s
         H0        = H0 * constants['Mpc'] / 1e5     # in km/s/Mpc
-        h         = H0 / 100                        # in units 100km/s/Mpc
+        h         = (H0 / 100).value                       # in units 100km/s/Mpc
 
         cosmo     = {'Redshift'   : cosmology['Redshift'][0], 
                     'HubbleParam' : h,

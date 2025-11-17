@@ -1099,8 +1099,14 @@ class ReadSwift:
 
             elif varname_frmtd[1] == self.groupdic['IonFractions']:
                 ion_format = varname_frmtd[2]
-                values = (getattr(getattr(self.SW_snap.gas,swiftsimio_format),ion_format).value)[self.los_mask]
-                info_s   = self.inputfunc.read_group(groupname = varname_frmtd[0]+'/'+varname_frmtd[1])            
+                try:
+                    values = (getattr(getattr(self.SW_snap.gas,swiftsimio_format),ion_format).value)[self.los_mask]
+                    info_s   = self.inputfunc.read_group(groupname = varname_frmtd[0]+'/'+varname_frmtd[1])            
+
+                except: 
+                    values = (getattr(getattr(self.SW_snap.gas,'reduced_species_fractions'),ion_format).value)[self.los_mask]
+                    info_s   = self.inputfunc.read_group(groupname = varname_frmtd[0]+'/ReducedSpeciesFractions')            
+
             else:
                 
                 values = (getattr(self.SW_snap.gas,swiftsimio_format).value)[self.los_mask]

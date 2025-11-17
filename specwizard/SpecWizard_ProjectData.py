@@ -235,6 +235,8 @@ class SightLineProjection:
                 rho_ion_sim[SimIon]                 = {}
                 rho_ion_sim[SimIon]['Densities']    = {'Value': np.zeros(npix), 'Info': nunit}  # ion mass density
                 rho_ion_sim[SimIon]['Velocities']   = {'Value': np.zeros(npix), 'Info': vunit}  # ion-weighted peculiar velocity
+                rho_ion_sim[SimIon]['MassDensities']    = {'Value': np.zeros(npix), 'Info': nunit}  # ion mass density
+
                 rho_ion_sim[SimIon]['Temperatures'] = {'Value': np.zeros(npix), 'Info': tunit}  # ion-weigthed temperature
                 rho_ion_sim[SimIon]['Mass']         = self.specparams["ionparams"]["transitionparams"][SimIon]["Mass"]
                 rho_ion_sim[SimIon]['lambda0']      = self.specparams["ionparams"]["transitionparams"][SimIon]["lambda0"] * unit.Angstrom
@@ -344,6 +346,7 @@ class SightLineProjection:
                     rho_ion_sim[ion]['Densities']['Value'][intz]    += diff
                     rho_ion_sim[ion]['Velocities']['Value'][intz]   += diff * vz[i]
                     rho_ion_sim[ion]['Temperatures']['Value'][intz] += diff * temperature[i]
+                    rho_ion_sim[ion]['MassDensities']['Value'][intz] += diff * density[i]
 
             except:
                 pass

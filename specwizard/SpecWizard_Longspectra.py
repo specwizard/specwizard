@@ -41,7 +41,7 @@ class LongSpectra:
         self.pixkms     = 1
         self.npix       = int((self.lambda_max-self.lambda_min)/self.dlambda)
         self.wavelength =  self.lambda_min + (np.arange(self.npix) * self.dlambda) 
-        self.paper = True
+        self.paper = False
         self.random_los = False
     def vel_from_wv(self,lambda_f,lambda_min,c_kms=1):
         '''
@@ -282,7 +282,7 @@ class LongSpectra:
         amount_rolled  = 0
         for ion in ions2do:
 
-            if self.paper== True:
+            if self.paper== False:
                 if self.readion == True:
                     if ion ==  ('Hydrogen', 'H I'):
                         opticaldepth[ion]['Optical depths'] = opticaldepth['SimIons'][ion]['Optical depths']
@@ -387,7 +387,7 @@ class LongSpectra:
         # we adjust the wizard dictionary to have the specifics of the choosen los
             wizard = self.adjust_wizard(los_dict)
             self.readion = False
-            if self.paper==True:
+            if self.paper==False:
                 crit = abs(z - 3.017) 
                 
                 if crit <0.045:

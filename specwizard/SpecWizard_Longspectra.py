@@ -5,6 +5,7 @@ import os
 import random as rd
 import copy
 import unyt 
+import glob
 from scipy.interpolate import interp1d
 from scipy.signal import convolve
 
@@ -33,6 +34,8 @@ class LongSpectra:
         self.z_qsr      = wizard['longspectra']['z_qsr']
         self.delta_z    = wizard['longspectra']['delta_z']
         self.file_dir   = wizard['longspectra']['file_dir']
+        self.file_type  = wizard['file_type']['snap_type']
+        self.sim_type   = wizard['file_type']['sim_type']
         self.all_contaminants = wizard['longspectra']['all_contaminants']
 
         self.pixkms     = 1
@@ -54,9 +57,18 @@ class LongSpectra:
         This function returns a list with all the hdf5 files in the directory assuming this are the files that will be use for building the longspectrum 
         '''
         los_files = []
-        for file in os.listdir(los_dir):
-            if file.endswith("hdf5"):
-                los_files.append(file)
+
+        if self.file_type == 'snapshot':
+            all_directories = [d for d in os.listdir(los_dir) if os.path.isdir(os.path.join(los_dir, d))]
+            for directory in all_directories:
+                files = os.listdir(directory)
+                if self.sim_type == 'colibre':
+                    file  = files[0].split('.')[0] + ".hdf5"
+                    los_files.append(files)
+        else:
+            for file in os.listdir(los_dir):
+                if file.endswith("hdf5"):
+                    los_files.append(file)
         return los_files
     
     def contaminant_lambda0(self):
@@ -128,12 +140,12 @@ class LongSpectra:
             whereisZ = sim_dics['Header']['Redshift']
             lodfile = h5py.File(los_dir+lfile,'r')
             aux_wizard = copy.deepcopy(self.wizard)
-            aux_wizard['file_type']['snap_type'] = 'los' 
+            aux_wizard['file_type']['snap_type'] = self.file_type
             aux_wizard['snapshot_params']['directory'] = los_dir
             aux_wizard['snapshot_params']['file'] = lfile
             #
             file_los[i]['file'] = lfile
-            file_los[i]['snap_type'] = 'los' 
+            file_los[i]['snap_type'] = self.file_type
             file_los[i]['los_dir']   = los_dir 
             file_los[i]['Redshift'] = lodfile[whereisZ[0]].attrs.get(whereisZ[1])    
 
@@ -228,7 +240,7 @@ class LongSpectra:
         snapdir   = los_dic['los_dir']
         snapfile  = los_dic['file']
         nsight    = los_dic['nsight']
-        BuildInput.FileType(sim_type='eagle',snap_type=snap_type)
+        BuildInput.FileType(sim_type=self.sim_type,snap_type=snap_type)
         BuildInput.SnapshotParams(path=snapdir,file=snapfile)
 
         table_type     = self.wizard['ionparams']['table_type']
@@ -240,9 +252,13 @@ class LongSpectra:
         atomdat        = self.wizard['ionparams']['atomfile']
         transitions = Elements(atomdat)
         BuildInput.SetIonTableParams(table_type=table_type,iondir=iondir,ions=ElementIons,fname=fname,SFR_properties=SFR_properties,atomfile=atomdat)
-
-        wizard    = BuildInput.Sightline(nsight=nsight)
-
+        if self.snap_type == 'los':
+            wizard    = BuildInput.Sightline(nsight=nsight)
+        else:
+            xstart = rd.random()
+            ystart = rd.random()
+            zstart = 0
+            wizard = BuildInput.Sightline(nsight=nsight,ProjectionStart=(xstart,ystart,zstart))
         return wizard
 
     def insert_in_long_spectra(self,long_spectra,snapshot,projected_LOS,opticaldepth,ions2do,roll=True):

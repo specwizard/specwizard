@@ -57,14 +57,13 @@ class LongSpectra:
         This function returns a list with all the hdf5 files in the directory assuming this are the files that will be use for building the longspectrum 
         '''
         los_files = []
-
         if self.file_type == 'snapshot':
             all_directories = [d for d in os.listdir(los_dir) if os.path.isdir(os.path.join(los_dir, d))]
             for directory in all_directories:
-                files = os.listdir(directory)
+                files = os.listdir(los_dir+directory)
                 if self.sim_type == 'colibre':
                     file  = files[0].split('.')[0] + ".hdf5"
-                    los_files.append(files)
+                    los_files.append(directory+'/'+file)
         else:
             for file in os.listdir(los_dir):
                 if file.endswith("hdf5"):
@@ -252,7 +251,7 @@ class LongSpectra:
         atomdat        = self.wizard['ionparams']['atomfile']
         transitions = Elements(atomdat)
         BuildInput.SetIonTableParams(table_type=table_type,iondir=iondir,ions=ElementIons,fname=fname,SFR_properties=SFR_properties,atomfile=atomdat)
-        if self.snap_type == 'los':
+        if self.file_type == 'los':
             wizard    = BuildInput.Sightline(nsight=nsight)
         else:
             xstart = rd.random()

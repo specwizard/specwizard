@@ -156,7 +156,7 @@ def get_simkeys(sim_name='eagle'):
             'snapshot': {
                 'elementnames': elementnames_swift,
                 'groupname': 'PartType0',
-                'ElementAbundance': 'ElementMassFractions',
+                'ElementAbundance': 'ReducedElementMassFractions',
                 'Densities': 'Densities',
                 'SmoothingLengths': 'SmoothingLengths',
                 'Masses': 'Masses',

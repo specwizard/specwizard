@@ -407,7 +407,7 @@ class InputFunctions:
 
         
         try:    
-        
+            
 
             if len(elements2do) == 0:
                 print("ERROR! No valid element or element name!")

@@ -481,8 +481,8 @@ class Build_Input:
         iondir = wizard_yml['ionparams']['iondir']
         fname = wizard_yml['ionparams']['fname']
         SFR_properties = wizard_yml['ionparams']['SFR_properties']
-        ions_array = np.array(wizard_yml['ionparams']['ions'])
-        ions = [(ions_array[i, 0], ions_array[i, 1]) for i in range(len(ions_array))]
+        #just a bit neater to read the ions from the yml file, we need to make sure they are in the right format for the rest of the code
+        ions = [(str(element), str(ion)) for element, ion in wizard_yml['ionparams']['ions']]
         atomfile = wizard_yml['ionparams']['atomfile']
         self.SetIonTableParams(table_type=table_type, iondir=iondir, SFR_properties=SFR_properties, fname=fname,
                                ions=ions, atomfile=atomfile)

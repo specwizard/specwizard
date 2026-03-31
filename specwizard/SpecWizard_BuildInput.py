@@ -227,7 +227,7 @@ class Build_Input:
 
         # Available ionization tables
         ions_available = []
-        table_types = ['specwizard_cloudy', 'ploeckinger','cloudy_hm01']
+        table_types = ['specwizard_cloudy', 'ploeckinger', 'chimes', 'cloudy_hm01']
 
         # Convert table_type to lowercase for case-insensitive comparison
         table_type = table_type.lower()

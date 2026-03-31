@@ -445,7 +445,7 @@ class IonTables:
         if iontable_info["table_type"] == 'chimes':
             ((table_z, table_LogTs, table_LognHs, table_LogZs), table) = self.ReadIonizationTable(ion=ion)
             # We divide by the Solar metallicity since the tables are in log10(Z/Zsol)
-            Zsol       = 0.013371374
+            Zsol       = 0.0129
             Z          = metal_fraction/Zsol
             # The tables treat zero as log10(1e-50)
             TInterpol  = np.log10(temperature)

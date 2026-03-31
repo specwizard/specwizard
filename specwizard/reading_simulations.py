@@ -404,10 +404,6 @@ class InputFunctions:
 
         if self.snaptype == 'los':
             groupname    = groupdic['groupname'].format(self.sightline['nsight'])
-
-        for elementname in elements2do:
-            
-            values  = read_variable(varname = groupname +'/'+ groupdic['ElementAbundance']+'/'+ elementname)['Value']
             
         try:    
             
@@ -418,7 +414,7 @@ class InputFunctions:
 
             for elementname in elements2do:
                 #now ElementAbundace can also be switched to ElementAbundanceDiffuse 
-                values  = read_variable(varname = groupname +'/'+ groupdic['ElementAbundance']+'/'+ elementname)['Value']
+                values  = read_variable(varname = groupname +'/'+ groupdic['ElementAbundanceDiffuse']+'/'+ elementname)['Value']
                 info    = unit
                 abundances[elementname] = {'Value':values, 'Info': unit}
         except:
@@ -1090,9 +1086,20 @@ class ReadSwift:
             
 
             if varname_frmtd[1] == self.groupdic['ElementAbundance'] or varname_frmtd[1] == self.groupdic['ElementAbundanceDiffuse']:
-                
-                element_list = hfile["SubgridScheme/NamedColumns/"+ varname_frmtd[1]][...]
-                element_index = np.argmax(element_list == varname_frmtd[2])
+                element_list_raw = hfile["SubgridScheme/NamedColumns/" + varname_frmtd[1]][...]
+                #bit decoding
+                element_list = np.array([
+                    one.decode("utf-8") if isinstance(one, (bytes, np.bytes_)) else str(one)
+                    for one in element_list_raw
+                ])
+                matched = np.where(element_list == varname_frmtd[2])[0]
+                if len(matched) == 0:
+                    raise KeyError(
+                        "Element '{}' not found in {} columns: {}".format(
+                            varname_frmtd[2], varname_frmtd[1], list(element_list)
+                        )
+                    )
+                element_index = int(matched[0])
                 
                 values = hfile[groupname][:,element_index]
                 

@@ -73,9 +73,9 @@ class InputFunctions:
             grp_dict[k]= group.attrs[k]
 
         hfile.close()
-
+        
         return dict(grp_dict)
-    
+
     def set_unit(self, vardescription = 'text describing variable', Lunit=constants['Mpc'], aFact=1.0, hFact=1.0):
         """
         Formats into a dictionary the information for converting to CGS units. Using the toCGS function.  
@@ -405,7 +405,10 @@ class InputFunctions:
         if self.snaptype == 'los':
             groupname    = groupdic['groupname'].format(self.sightline['nsight'])
 
-        
+        for elementname in elements2do:
+            
+            values  = read_variable(varname = groupname +'/'+ groupdic['ElementAbundance']+'/'+ elementname)['Value']
+            
         try:    
             
 
@@ -414,7 +417,7 @@ class InputFunctions:
 
 
             for elementname in elements2do:
-
+                #now ElementAbundace can also be switched to ElementAbundanceDiffuse 
                 values  = read_variable(varname = groupname +'/'+ groupdic['ElementAbundance']+'/'+ elementname)['Value']
                 info    = unit
                 abundances[elementname] = {'Value':values, 'Info': unit}
@@ -427,7 +430,7 @@ class InputFunctions:
 
         #Check if metallicities are available. 
         try: 
-            metallicity  =read_variable(varname = groupname + '/' + groupdic['Metallicities'])
+            metallicity  = read_variable(varname = groupname + '/' + groupdic['Metallicities'])
         except:
             print("Warning! Metallicities not found. Setting them to zero.")
             metallicity = np.zeros_like(particles['Densities']['Value'])
@@ -1050,12 +1053,12 @@ class ReadSwift:
         print("We divide Swift's smoothing length by {0:1.3f} to convert from FWHM to extent of finite support".format(FWHM))
 
         if (self.simtype == 'swift' and self.readIonFrac):
-            print("this is happening")
             field_name= self.fileparams['extra_parameters']['ReadIonFrac']['HI']
             ionfrac = self.read_variable(varname = groupname + '/' + field_name)
             particles['SimulationIonFractions'] = {}
             particles['SimulationIonFractions']["H I"] = ionfrac
-        if (self.simtype == 'colibre'):
+        #Check if only the simulation ion fraction should be read!
+        if (self.simtype == 'colibre' and self.readIonFrac):
             
             particles['SimulationIonFractions'] = self.inputfunc.ReadAndShapeIonFrac(self.read_variable,particles,groupname)
         
@@ -1082,15 +1085,29 @@ class ReadSwift:
         
         if self.snaptype == 'los':
             hfile  = h5py.File(self.fname, "r")
-            values = np.array(hfile[varname][...])
+            varname_frmtd = varname.split("/")
+            groupname = varname_frmtd[0] + '/' + varname_frmtd[1]
+            
+
+            if varname_frmtd[1] == self.groupdic['ElementAbundance'] or varname_frmtd[1] == self.groupdic['ElementAbundanceDiffuse']:
+                
+                element_list = hfile["SubgridScheme/NamedColumns/"+ varname_frmtd[1]][...]
+                element_index = np.argmax(element_list == varname_frmtd[2])
+                
+                values = hfile[groupname][:,element_index]
+                
+                info_s   = self.inputfunc.read_group(groupname = groupname)
+            else:
+                values = np.array(hfile[varname][...])
             hfile.close()
-            info_s  = self.inputfunc.read_group(groupname = varname)
+            
+            info_s  = self.inputfunc.read_group(groupname = groupname)
 
         if self.snaptype =='snapshot':
             
             varname_frmtd = varname.split("/")
             
-            swiftsimio_format = self.swiftswimio_format(varname = varname_frmtd[1])
+            swiftsimio_format = self.swiftswimio_format(varname = varname_frmtd[1]) 
 
             if varname_frmtd[1] == self.groupdic['ElementAbundance']:
                 element_format = self.swiftswimio_format(varname = varname_frmtd[2])
@@ -1137,9 +1154,10 @@ class ReadSwift:
         out : str
         Formated string 
         """
-        varname_formated = re.sub(r"([A-Z])", r"_\1", varname)
 
-        return varname_formated[1:].lower()
+        #changed so element abundances and ion fractions can be read with swiftsimio without cutting of first letter because of capitalization
+        varname_formated = re.sub(r"(?<!^)([A-Z])", r"_\1", varname)
+        return varname_formated.lower()
 
     
 class ReadHydrangea:

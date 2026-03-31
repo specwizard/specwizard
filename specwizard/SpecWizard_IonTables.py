@@ -278,10 +278,10 @@ class IonTables:
             # Build a redshift-resolved table by stacking all z*.hdf5 files in iondir.
             redshift_pattern = re.compile(r"^z(?P<z>\d+(?:\.\d+)?)(?:_eqm)?\.hdf5$")
             redshift_files = []
-            for file in os.listdir(iondir):
-                match = redshift_pattern.match(file)
+            for onefile in os.listdir(iondir):
+                match = redshift_pattern.match(onefile)
                 if match:
-                    redshift_files.append((float(match.group("z")), os.path.join(iondir, file)))
+                    redshift_files.append((float(match.group("z")), os.path.join(iondir, onefile)))
 
             if len(redshift_files) == 0:
                 raise FileNotFoundError(
@@ -304,12 +304,14 @@ class IonTables:
                 with h5py.File(filepath, "r") as hf:
                     file_LogT = hf["TableBins/Temperatures"][:]
                     file_LognH = hf["TableBins/Densities"][:]
-                    file_LogZ = hf["TableBins/Metallicities"][:]
-                    #check for every file that the bins are the same, otherwise interpolation will be wrong and we will have to interpolate to a common grid first
+                    file_LogZ = hf["TableBins/Metallicities"][:]                  
+                    
+                     #check for every file that the bins are the same, 
+                     #otherwise interpolation will be wrong and we will have to interpolate to a common grid firsties"][:]
                     if not (np.array_equal(file_LogT, LogT) and np.array_equal(file_LognH, LognH) and np.array_equal(file_LogZ, LogZ)):
                         raise ValueError(f"Inconsistent CHIMES table bins in {filepath}")
 
-                    # File layout is (T, nH, Z, species). Move to (T, Z, nH) to match original ordering in "ploeckinger table"
+                    # File layout is (T, nH, Z, species). Move to ( to match original ordering in "ploeckinger table", Z, nH).
                     LogAbundance[i] = np.transpose(hf["Abundances"][:, :, :, element_index], (0, 2, 1))
 
             result = ((z, LogT, LognH, LogZ), LogAbundance)

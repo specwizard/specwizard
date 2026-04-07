@@ -288,22 +288,22 @@ class IonTables:
             z = np.array([item[0] for item in redshift_files])
 
             first_file = redshift_files[0][1]
-            with h5py.File(first_file, "r") as hf0:
-                LogT = hf0["TableBins/Temperatures"][:]
-                LognH = hf0["TableBins/Densities"][:]
-                LogZ = hf0["TableBins/Metallicities"][:]
+            hf0 = h5py.File(first_file, "r")
+            LogT = hf0["TableBins/Temperatures"][:]
+            LognH = hf0["TableBins/Densities"][:]
+            LogZ = hf0["TableBins/Metallicities"][:]
+            hf0.close()
 
             # Final table ordering matches ploeckinger interpolation usage: (z, T, Z, nH).
             LogAbundance = np.empty((len(z), len(LogT), len(LogZ), len(LognH)))
 
             for i, (_, filepath) in enumerate(redshift_files):
-                with h5py.File(filepath, "r") as hf:
-                    # File layout is (T, nH, Z, species). Move to match (T, Z, nH).
-                    LogAbundance[i] = np.transpose(hf["Abundances"][:, :, :, element_index], (0, 2, 1))
-
-            result = ((z, LogT, LognH, LogZ), LogAbundance)
+                hf = h5py.File(filepath, "r")
+                # File layout is (T, nH, Z, species). Move to match (T, Z, nH).
+                LogAbundance[i] = np.transpose(hf["Abundances"][:, :, :, element_index], (0, 2, 1))
+                hf.close()
             
-            return result
+            return ((z, LogT, LognH, LogZ), LogAbundance)
         
         if iontable_info["table_type"] == 'cloudy_hm01':
             ion_element_short = (''.join(re.split('I|  |V|X|', ion))).strip().lower()

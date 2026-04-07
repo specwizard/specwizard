@@ -2,11 +2,12 @@
 #%%writefile SpecWizard_BuildInput.py 
 
 import os
+import re
 import h5py
 import sys
 import numpy as np
 from .SpecWizard_Elements import Elements
-from .SpecWizard_IonTables import IonTables
+from .SpecWizard_IonTables import IonTables, CHIMES_DICT
 import yaml
 import traceback
 import mendeleev
@@ -210,11 +211,12 @@ class Build_Input:
         and how to deal with star forming particles.
 
         Args:
-            table_type (str): Name of the ionizations tables to use, current options 'specwizard_cloudy' and 'ploeckinger'.
-                             The former corresponds to the Cloudy tables created from the Cloudy notebook based on HM2012,
-                             and the latter corresponds to the tables described in Ploeckinger et al. (2020).
+            table_type (str): Name of the ionizations tables to use, current options 'specwizard_cloudy', 'ploeckinger', and 'chimes'.
+                             The first corresponds to the Cloudy tables created from the Cloudy notebook based on HM2012,
+                             the second corresponds to the tables described in Ploeckinger et al. (2020)
+                             and the third corresponds to the tables described in Ploeckinger et al.(2025).
                              (default='specwizard_cloud')
-            iondir (str): Directory path to the ionization table. (default='HM12_table/path/in/cosma')
+            iondir (str): Directory path to the ionization table. (default='HM12_table/path/in/cosma'). Needed for all tables.
             fname (str): Name of ionization table, only needed for ploeckinger tables. (default='')
             ions (list of tuples): List of elements and ions to do, e.g., [('Element1', 'Ion1'), ('Element2', 'Ion1', ...), ...].
                                    (default=[('Hydrogen', 'H I')])
@@ -277,6 +279,69 @@ class Build_Input:
                 print("iondir = ", iondir)
                 print("fname = ", fname)
                 print("Doh!")
+                sys.exit(-1)
+
+        elif table_type == 'chimes':
+            try:
+                if not os.path.isdir(iondir):
+                    raise FileNotFoundError(f"CHIMES ionization table directory not found: {iondir}")
+
+                # CHIMES stores one table per redshift (e.g. z0.000.hdf5, z0.000_eqm.hdf5).
+                redshift_pattern = re.compile(r"^z(?P<z>\d+(?:\.\d+)?)(?:_eqm)?\.hdf5$")
+                redshift_files = []
+                for onefile in os.listdir(iondir):
+                    match = redshift_pattern.match(onefile)
+                    if match:
+                        redshift_files.append((float(match.group("z")), os.path.join(iondir, onefile)))
+
+                if len(redshift_files) == 0:
+                    raise FileNotFoundError(
+                        f"No CHIMES redshift files found in {iondir}. Expected files like z0.000.hdf5 or z0.000_eqm.hdf5"
+                    )
+
+                redshift_files.sort(key=lambda x: x[0])
+
+                first_file = redshift_files[0][1]
+                with h5py.File(first_file, "r") as hf0:
+                    LogT = hf0["TableBins/Temperatures"][:]
+                    LognH = hf0["TableBins/Densities"][:]
+                    LogZ = hf0["TableBins/Metallicities"][:]
+                    n_species = hf0["Abundances"].shape[-1]
+
+                # Ensure all redshift files are on the same interpolation grid.
+                for _, filepath in redshift_files[1:]:
+                    with h5py.File(filepath, "r") as hf:
+                        file_LogT = hf["TableBins/Temperatures"][:]
+                        file_LognH = hf["TableBins/Densities"][:]
+                        file_LogZ = hf["TableBins/Metallicities"][:]
+                        file_n_species = hf["Abundances"].shape[-1]
+
+                        if not (
+                            np.array_equal(file_LogT, LogT)
+                            and np.array_equal(file_LognH, LognH)
+                            and np.array_equal(file_LogZ, LogZ)
+                        ):
+                            raise ValueError(f"Inconsistent CHIMES table bins in {filepath}")
+
+                        if file_n_species != n_species:
+                            raise ValueError(f"Inconsistent CHIMES species dimension in {filepath}")
+
+                # Build available ions from atom file transitions, filtered by CHIMES species availability.
+                atom = h5py.File(atomfile, "r")
+                try:
+                    for element_name in atom.keys():
+                        for ion_name in atom[element_name].keys():
+                            ion_key = ion_name.replace(" ", "")
+                            if ion_key in CHIMES_DICT:
+                                species_index = CHIMES_DICT[ion_key]
+                                if species_index < n_species:
+                                    ions_available.append((element_name, ion_name))
+                finally:
+                    atom.close()
+
+            except:
+                print("iondir = ", iondir)
+                traceback.print_exc()
                 sys.exit(-1)
 
         # Set ion_properties dictionary

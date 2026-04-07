@@ -198,6 +198,7 @@ class IonTables:
             tuple: Ionization table contents.
                 - If `table_type` is 'specwizard_cloudy': ((redshift, Log_temperature, Log_nH), Log_Abundance).
                 - If `table_type` is 'ploeckinger': ((redshift, Log_temperature, Log_(Z/Zsol), Log_nH), Log_Abundance).
+                - If `table_type` is 'chimes': ((redshift, Log_temperature, Log_(Z/Zsol), Log_nH), Log_Abundance).
 
         Raises:
             FileNotFoundError: If the required ionization table file does not exist.
@@ -283,11 +284,6 @@ class IonTables:
                 if match:
                     redshift_files.append((float(match.group("z")), os.path.join(iondir, onefile)))
 
-            if len(redshift_files) == 0:
-                raise FileNotFoundError(
-                    f"No CHIMES redshift files found in {iondir}. Expected files like z0.000.hdf5 or z0.000_eqm.hdf5"
-                )
-
             redshift_files.sort(key=lambda x: x[0])
             z = np.array([item[0] for item in redshift_files])
 
@@ -302,16 +298,7 @@ class IonTables:
 
             for i, (_, filepath) in enumerate(redshift_files):
                 with h5py.File(filepath, "r") as hf:
-                    file_LogT = hf["TableBins/Temperatures"][:]
-                    file_LognH = hf["TableBins/Densities"][:]
-                    file_LogZ = hf["TableBins/Metallicities"][:]                  
-                    
-                     #check for every file that the bins are the same, 
-                     #otherwise interpolation will be wrong and we will have to interpolate to a common grid firsties"][:]
-                    if not (np.array_equal(file_LogT, LogT) and np.array_equal(file_LognH, LognH) and np.array_equal(file_LogZ, LogZ)):
-                        raise ValueError(f"Inconsistent CHIMES table bins in {filepath}")
-
-                    # File layout is (T, nH, Z, species). Move to ( to match original ordering in "ploeckinger table", Z, nH).
+                    # File layout is (T, nH, Z, species). Move to match (T, Z, nH).
                     LogAbundance[i] = np.transpose(hf["Abundances"][:, :, :, element_index], (0, 2, 1))
 
             result = ((z, LogT, LognH, LogZ), LogAbundance)
@@ -401,7 +388,7 @@ class IonTables:
             redshift (float): Redshift of the particles.
             nH_density (float): Proper hydrogen density (particles/cm³).
             temperature (float): Gas temperature in Kelvin.
-            metal_fraction (float): Total metallicity of the particles (for 'ploeckinger' tables).
+            metal_fraction (float): Total metallicity of the particles (for 'ploeckinger' and 'chimes' tables).
             ion (str): Name of the ion (e.g., 'H I').
 
         Returns:

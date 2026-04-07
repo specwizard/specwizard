@@ -107,6 +107,7 @@ Example:
 
     - ```'specwizard_cloudy'```:  Corresponds to the Cloudy tables created from the Cloudy notebook based in `Haardt & Madau 2012 <https://ui.adsabs.harvard.edu/abs/2012ApJ...746..125H/abstract>`_.
     -  ```'ploeckinger'```: Correspond to the tables described in  `Ploeckinger & Schaye 2020 <https://ui.adsabs.harvard.edu/abs/2020MNRAS.497.4857P/abstract>`_ .
+    -  ```'chimes'```: Correspond to the tables described in  `Ploeckinger & Richings 2025 <https://ui.adsabs.harvard.edu/abs/2025MNRAS.543..891P/abstract>`_ .
 
 ``iondir``: Path for the ionization table.
 

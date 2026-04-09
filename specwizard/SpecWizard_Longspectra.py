@@ -219,13 +219,25 @@ class LongSpectra:
         if len(mask)==0:
 
             return None
+
+        #dont know why the previous code but colibre has sightlines ranging from 0 to 104    
+        if self.sim_type == 'colibre':
+            min_sight = 0
+            max_sight = 104
+        elif random:
+            min_sight = 0
+            max_sight = 99
+        else:
+            min_sight = 1
+            max_sight = 90
+
         if random:
             random_file  = rd.choice(mask) 
-            random_sight = rd.randint(0,99)
+            random_sight = rd.randint(min_sight, max_sight)
 
         else:
             random_file  = mask[0]
-            random_sight = rd.randint(1, 90)
+            random_sight = rd.randint(min_sight, max_sight)
         los_dict[random_file]['nsight'] = random_sight
         return los_dict[random_file]
     

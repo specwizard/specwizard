@@ -366,7 +366,7 @@ class InputFunctions:
     
     def set_fractions_metallicity(self,read_variable,particles):
         """
-        Reads the element fraction and metallicities of particles. The metallicy is used in some ionization tables (e.g Ploekinger)
+        Reads the element fraction and metallicities of particles. The metallicity is used in some ionization tables (e.g Ploeckinger)
         
         Since simulations do not contain metallicity or element fraction. This fuction attempts to read the simulation data, if it fails it set some default values
         Sets metallicities to zero 
@@ -1047,7 +1047,6 @@ class ReadSwift:
         FWHM = 0.362
         particles['SmoothingLengths']["Value"] /= FWHM
         print("We divide Swift's smoothing length by {0:1.3f} to convert from FWHM to extent of finite support".format(FWHM))
-
         if (self.simtype == 'swift' and self.readIonFrac):
             field_name= self.fileparams['extra_parameters']['ReadIonFrac']['HI']
             ionfrac = self.read_variable(varname = groupname + '/' + field_name)
@@ -1055,7 +1054,6 @@ class ReadSwift:
             particles['SimulationIonFractions']["H I"] = ionfrac
         #Check if only the simulation ion fraction should be read!
         if (self.simtype == 'colibre' and self.readIonFrac):
-            
             particles['SimulationIonFractions'] = self.inputfunc.ReadAndShapeIonFrac(self.read_variable,particles,groupname)
         
         if self.fileparams['ionparams']['SFR_properties']['modify_particle']:
@@ -1097,6 +1095,26 @@ class ReadSwift:
                     raise KeyError(
                         "Element '{}' not found in {} columns: {}".format(
                             varname_frmtd[2], varname_frmtd[1], list(element_list)
+                        )
+                    )
+                element_index = int(matched[0])
+                
+                values = hfile[groupname][:,element_index]
+                
+                info_s   = self.inputfunc.read_group(groupname = groupname)
+            
+            elif varname_frmtd[1] == self.groupdic['IonFractions'] or varname_frmtd[1] == 'ReducedSpeciesFractions':
+                species_list_raw = hfile["SubgridScheme/NamedColumns/" + varname_frmtd[1]][...]
+                #bit decoding
+                species_list = np.array([
+                    one.decode("utf-8") if isinstance(one, (bytes, np.bytes_)) else str(one)
+                    for one in species_list_raw
+                ])
+                matched = np.where(species_list == varname_frmtd[2])[0]
+                if len(matched) == 0:
+                    raise KeyError(
+                        "Species '{}' not found in {} columns: {}".format(
+                            varname_frmtd[2], varname_frmtd[1], list(species_list)
                         )
                     )
                 element_index = int(matched[0])

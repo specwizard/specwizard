@@ -48,6 +48,19 @@ class OpticalDepth_IO:
         hfile.close()
         return dict(grp_dict)
 
+    def ReadVariable(self, varname='LOS1/Density'):
+        # read one dataset and all of its attributes
+        hfile = h5py.File(self.dirname + self.fname, "r")
+        dset = hfile[varname]
+
+        values = dset[...]
+        info = {}
+        for k in dset.attrs.keys():
+            info[k] = dset.attrs[k]
+
+        hfile.close()
+        return {'Value': values, 'Info': dict(info)}
+
     def WriteGroup(self, dictionary, groupname='Header'):
         ''' write all entries of this dictionary to groupname '''
         hfile = h5py.File(self.dirname + self.fname, "a")

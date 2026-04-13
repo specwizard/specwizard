@@ -263,6 +263,21 @@ class LongSpectra:
         atomdat        = self.wizard['ionparams']['atomfile']
         transitions = Elements(atomdat)
         BuildInput.SetIonTableParams(table_type=table_type,iondir=iondir,ions=ElementIons,fname=fname,SFR_properties=SFR_properties,atomfile=atomdat)
+        extra_params = self.wizard.get('extra_parameters', {})
+        BuildInput.ExtraParams(
+            periodic=extra_params.get('periodic', True),
+            kernel=extra_params.get('Kernel', 'Gauss'),
+            pixkms=extra_params.get('pixkms', 1),
+            veloff=extra_params.get('Veloffset', 0),
+            ReadIonFrac=extra_params.get('ReadIonFrac', {
+                'ReadIonFrac': False,
+                'ReadHydrogen': True,
+                'HI': 'NeutralHydrogenAbundance',
+                'ReadHelium': False,
+                'He': '',
+                'fname_urchin': '',
+            }),
+        )
         if self.file_type == 'los':
             wizard    = BuildInput.Sightline(nsight=nsight)
         else:
@@ -293,10 +308,15 @@ class LongSpectra:
         amount_rolled  = 0
         for ion in ions2do:
 
-            if self.paper== False:
-                if self.readion == True:
-                    if ion ==  ('Hydrogen', 'H I'):
-                        opticaldepth[ion]['Optical depths'] = opticaldepth['SimIons'][ion]['Optical depths']
+            if ion not in long_spectra['Ions']:
+                continue
+
+            if ion not in opticaldepth and not ('SimIons' in opticaldepth and ion in opticaldepth['SimIons']):
+                continue
+
+            # Prefer simulation ion fractions whenever present, no self.readout flag for this, just check if they are there and use them if so.
+            if 'SimIons' in opticaldepth and ion in opticaldepth['SimIons']:
+                opticaldepth[ion]['Optical depths'] = opticaldepth['SimIons'][ion]['Optical depths']
 
             tau         = opticaldepth[ion]['Optical depths']['Value']
             temp        = opticaldepth[ion]['Velocities']['Value']
@@ -500,6 +520,10 @@ class LongSpectra:
             long_spectra = self.insert_in_long_spectra(long_spectra,snapshot,projected_LOS,opticaldepth,wizard['ionparams']['Ions'],roll=True)        
         
         for ions in ions2do:
+            if ions not in long_spectra['Ions']:
+                continue
+            if ions not in opticaldepth:
+                continue
             for keys in ["Optical depths","Velocities","Densities","Temperatures"]:
                 value = long_spectra['Ions'][ions][keys]
                 long_spectra['Ions'][ions][keys] = {}

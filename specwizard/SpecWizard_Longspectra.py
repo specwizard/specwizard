@@ -319,8 +319,8 @@ class LongSpectra:
                 opticaldepth[ion]['Optical depths'] = opticaldepth['SimIons'][ion]['Optical depths']
 
             tau         = opticaldepth[ion]['Optical depths']['Value']
-            temp        = opticaldepth[ion]['Velocities']['Value']
-            vel         = opticaldepth[ion]['Temperatures']['Value']
+            vel        = opticaldepth[ion]['Velocities']['Value']
+            temp       = opticaldepth[ion]['Temperatures']['Value']
             dens        = opticaldepth[ion]['Densities']['Value']
             lambda0     = opticaldepth[ion]['lambda0']
             fvalue      = opticaldepth[ion]['f-value']
@@ -487,6 +487,8 @@ class LongSpectra:
 
         ions2do = self.check_if_ion_contaminates(ions_we_want)
         long_spectra   = {}
+        ion_field_meta = {}
+        field_names = ["Optical depths", "Velocities", "Densities", "Temperatures"]
         
         long_spectra['velocities'] = velocity_array
         long_spectra['wavelengths'] = self.lambda_min * np.exp(velocity_array/c_kms)
@@ -517,18 +519,36 @@ class LongSpectra:
             wizard['ODParams']['VoigtOff'] = True
             cspec                = ComputeOpticaldepth(wizard)
             opticaldepth         = cspec.MakeAllOpticaldepth(projected_LOS)
+            for ion in ions2do:
+                if ion not in opticaldepth:
+                    continue
+                if ion not in ion_field_meta:
+                    ion_field_meta[ion] = {}
+                for key in field_names:
+                    if key in opticaldepth[ion] and 'Value' in opticaldepth[ion][key]:
+                        ion_field_meta[ion][key] = {
+                            'units': opticaldepth[ion][key]['Value'].units,
+                            'Info': opticaldepth[ion][key].get('Info', ''),
+                        }
             long_spectra = self.insert_in_long_spectra(long_spectra,snapshot,projected_LOS,opticaldepth,wizard['ionparams']['Ions'],roll=True)        
         
+        default_units = {
+            "Optical depths": unyt.dimensionless,
+            "Velocities": unyt.km / unyt.s,
+            "Densities": unyt.cm**-3,
+            "Temperatures": unyt.K,
+        }
         for ions in ions2do:
             if ions not in long_spectra['Ions']:
                 continue
-            if ions not in opticaldepth:
-                continue
-            for keys in ["Optical depths","Velocities","Densities","Temperatures"]:
+            for keys in field_names:
                 value = long_spectra['Ions'][ions][keys]
+                meta = ion_field_meta.get(ions, {}).get(keys, {})
+                units = meta.get('units', default_units[keys])
+                info = meta.get('Info', f'Long spectra accumulated field: {keys}. This is a default info string, no specific info found for this field.')
                 long_spectra['Ions'][ions][keys] = {}
-                long_spectra['Ions'][ions][keys]['Value'] = value * opticaldepth[ions][keys]['Value'].units
-                long_spectra['Ions'][ions][keys]['Info']  = opticaldepth[ions][keys]['Info']
+                long_spectra['Ions'][ions][keys]['Value'] = value * units
+                long_spectra['Ions'][ions][keys]['Info']  = info
 
         long_spectra['velocities'] *= unyt.km/unyt.s
         long_spectra['wavelengths'] *= unyt.Angstrom

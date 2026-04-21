@@ -167,6 +167,7 @@ class OpticalDepth_IO:
         
         #
         variables    = ['Velocities', 'Densities', 'Temperatures']
+        od_variables = variables + ['TotalIonColumnDensity']
         # create group for each element
         for element in self.elements:
             elementgroup = groupname + '/' + element
@@ -263,16 +264,18 @@ class OpticalDepth_IO:
             # check for simions
             if 'SimIons' in opticaldepth.keys():
                 if transition in opticaldepth['SimIons'].keys():
-                    for variable in variables:
-                        self.WriteVariable(opticaldepth['SimIons'][transition][variable], 
-                                group+'/SimIons/' + variable)
+                    for variable in od_variables:
+                        if variable in opticaldepth['SimIons'][transition].keys():
+                            self.WriteVariable(opticaldepth['SimIons'][transition][variable], 
+                                    group+'/SimIons/' + variable)
                     self.WriteVariable(opticaldepth['SimIons'][transition]['Optical depths'], 
                             group+'/SimIons'+'/Optical depths')
 
             # add optical dept-weighted variables
-            for variable in variables:
-                self.WriteVariable(opticaldepth[transition][variable], 
-                                   group+'/' + variable)
+            for variable in od_variables:
+                if variable in opticaldepth[transition].keys():
+                    self.WriteVariable(opticaldepth[transition][variable], 
+                                       group+'/' + variable)
             self.WriteVariable(opticaldepth[transition]['Optical depths'], 
                                    group+'/Optical depths')
             
@@ -320,6 +323,7 @@ class OpticalDepth_IO:
         
         #
         variables    = ['Velocities', 'Densities', 'Temperatures']
+        od_variables = variables + ['TotalIonColumnDensity']
         # create group for each element
         for element in self.elements:
             elementgroup = groupname + '/' + element
@@ -416,16 +420,18 @@ class OpticalDepth_IO:
             # check for simions
             if 'SimIons' in opticaldepth.keys():
                 if transition in opticaldepth['SimIons'].keys():
-                    for variable in variables:
-                        self.WriteVariable(opticaldepth['SimIons'][transition][variable], 
-                                group+'/SimIons/' + variable)
+                    for variable in od_variables:
+                        if variable in opticaldepth['SimIons'][transition].keys():
+                            self.WriteVariable(opticaldepth['SimIons'][transition][variable], 
+                                    group+'/SimIons/' + variable)
                     self.WriteVariable(opticaldepth['SimIons'][transition]['Optical depths'], 
                             group+'/SimIons'+'/Optical depths')
 
             # add optical dept-weighted variables
-            for variable in variables:
-                self.WriteVariable(opticaldepth[transition][variable], 
-                                   group+'/' + variable)
+            for variable in od_variables:
+                if variable in opticaldepth[transition].keys():
+                    self.WriteVariable(opticaldepth[transition][variable], 
+                                       group+'/' + variable)
             self.WriteVariable(opticaldepth[transition]['Optical depths'], 
                                    group+'/Optical depths')
             

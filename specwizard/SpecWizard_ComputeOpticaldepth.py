@@ -103,13 +103,23 @@ class ComputeOpticaldepth:
         
         Ions = self.specparams["ionparams"]["Ions"]
         projectionIW = projection["Projection"]["Ion-weighted"]
+        #still some safegarding if the projection does not contain the full element field for hydrogen or metallicity.
         hydrogen_number_density = None
+        metallicity = None
         #retrieving the hydrogen number density for the full element field if it is present in the projection. Should normally be the case
         if "Element-weighted" in projection["Projection"] and "Hydrogen" in projection["Projection"]["Element-weighted"]:
             hydrogen_mass_density = self.to_physical(
                 projection["Projection"]["Element-weighted"]["Hydrogen"]["Densities"]
             ).in_cgs()
             hydrogen_number_density = hydrogen_mass_density / self.constants["mH"]
+        # retrieving the metallicity for the full mass field if it is present in the projection.
+        # ProjectData stores this as Mass-weighted -> Metallicities.
+        if "Mass-weighted" in projection["Projection"] and "Metallicities" in projection["Projection"]["Mass-weighted"]:
+            metallicity = self.to_physical(
+                projection["Projection"]["Mass-weighted"]["Metallicities"]
+            )
+
+
         
         #If extend is true it will introduce the projected spectra into a larger zero's array so we can observe large effects of for exmaple a galaxy
         extend = self.specparams['sightline']['ProjectionExtend']
@@ -130,6 +140,11 @@ class ComputeOpticaldepth:
                 temp_array[start_indx:start_indx+npix] = hydrogen_number_density.value.copy()
                 hydrogen_number_density = temp_array * hydrogen_number_density.units
 
+            if metallicity is not None:
+                temp_array = np.zeros_like(extended_vel_kms)
+                temp_array[start_indx:start_indx+npix] = metallicity.copy()
+                
+
             if 'SimIon-weighted' in projection["Projection"].keys():
                 projectionSimIon = projection["Projection"]['SimIon-weighted']
                 for ion in projectionSimIon.keys():
@@ -149,6 +164,7 @@ class ComputeOpticaldepth:
             vel_mod=False,
             therm_mod=False,
             hydrogen_number_density=hydrogen_number_density,
+            metallicity=metallicity,
         )
         
         # Apply various effects
@@ -160,6 +176,7 @@ class ComputeOpticaldepth:
                 vel_mod=False,
                 therm_mod=True,
                 hydrogen_number_density=hydrogen_number_density,
+                metallicity=metallicity,
             )
 
         if self.PecVelEff:
@@ -170,6 +187,7 @@ class ComputeOpticaldepth:
                 vel_mod=True,
                 therm_mod=False,
                 hydrogen_number_density=hydrogen_number_density,
+                metallicity=metallicity,
             )
 
         if self.ThermEff and self.PecVelEff:
@@ -180,6 +198,7 @@ class ComputeOpticaldepth:
                 vel_mod=True,
                 therm_mod=True,
                 hydrogen_number_density=hydrogen_number_density,
+                metallicity=metallicity,
             )
 
         DoSimIons = False
@@ -206,6 +225,7 @@ class ComputeOpticaldepth:
                 vel_mod=False,
                 therm_mod=False,
                 hydrogen_number_density=hydrogen_number_density,
+                metallicity=metallicity,
             )
             
             if self.ThermEff:
@@ -216,6 +236,7 @@ class ComputeOpticaldepth:
                     vel_mod=False,
                     therm_mod=True,
                     hydrogen_number_density=hydrogen_number_density,
+                    metallicity=metallicity,
                 )
 
             if self.PecVelEff:
@@ -226,6 +247,7 @@ class ComputeOpticaldepth:
                     vel_mod=True,
                     therm_mod=False,
                     hydrogen_number_density=hydrogen_number_density,
+                    metallicity=metallicity,
                 )
 
             if self.ThermEff and self.PecVelEff:
@@ -236,12 +258,14 @@ class ComputeOpticaldepth:
                     vel_mod=True,
                     therm_mod=True,
                     hydrogen_number_density=hydrogen_number_density,
+                    metallicity=metallicity,
                 )
         
         return spectra
 
     
-    def WrapSpectra(self, Ions, projection, sightparams, vel_mod=False, therm_mod=False, hydrogen_number_density=None):
+    def WrapSpectra(self, Ions, projection, sightparams, vel_mod=False, therm_mod=False,
+                    hydrogen_number_density=None, metallicity=None):
         ''' 
         Wraps and computes spectra for a given set of ions based on the projection and sightline parameters.
 
@@ -296,6 +320,7 @@ class ComputeOpticaldepth:
                     mass_densities=densities,
                     element_name=element_name,
                     hydrogen_number_density=hydrogen_number_density,
+                    metallicity=metallicity,
                 )
                 
                 # Store computed spectra for each ion
@@ -303,7 +328,6 @@ class ComputeOpticaldepth:
                     "Velocities": {'Value': vel_kms, 'Info': vunit},
                     "Optical depths": spectrum["Optical depths"],
                     "Densities": spectrum["Densities"],
-                    "HydrogenDensities": spectrum["HydrogenDensities"],
                     "Velocities": spectrum["Velocities"],
                     "Temperatures": spectrum["Temperatures"],
                     "TotalIonColumnDensity": spectrum["TotalIonColumnDensity"],
@@ -311,6 +335,10 @@ class ComputeOpticaldepth:
                     "lambda0": lambda0*unyt.Angstrom,
                     "f-value": f_value*unyt.dimensionless
                 }
+                if "HydrogenDensities" in spectrum:
+                    spectra[ion]["HydrogenDensities"] = spectrum["HydrogenDensities"]
+                if "Metallicities" in spectrum:
+                    spectra[ion]["Metallicities"] = spectrum["Metallicities"]
                 
         
         return spectra
@@ -319,7 +347,7 @@ class ComputeOpticaldepth:
     def MakeOpticaldepth(self, sightparams={'sight_kms': 0.0, 'vel_kms': [0.0], 'pixel_kms': 1.0, 'pixel': 1.0},
                         weight=1.67382335232e-24, lambda0=1215.67, f_value=0.4164, 
                         nions=[0.0], vions_kms=[0.0], Tions=[0.0], mass_densities=[0.0], element_name='Hydrogen',
-                        hydrogen_number_density=None):
+                        hydrogen_number_density=None, metallicity=None):
         ''' 
         Compute the optical depth for a given transition based on ionic density, temperature, and peculiar velocity.
 
@@ -339,6 +367,7 @@ class ComputeOpticaldepth:
             element_name (str, optional): Name of the element (e.g., 'Hydrogen'). Defaults to 'Hydrogen'.
             hydrogen_number_density (list of float, optional): Hydrogen number density in particles/cm^3
                 for the full element field from the simulation.
+            metallicity (dict, optional): Metallicities from the simulation projected on the sightline.
 
         Returns:
             dict: A dictionary containing:
@@ -383,6 +412,7 @@ class ComputeOpticaldepth:
         vions_tot_kms = vions_kms + vHubble_kms+ voffset_kms
         
         
+        
         spectrum = lines.gaussian(
             column_densities=ioncolumns,
             b_kms=bions_kms,
@@ -390,15 +420,17 @@ class ComputeOpticaldepth:
             Tions=Tions,
             mass_densities=mass_densities,
             hydrogen_number_densities=hydrogen_number_density,
+            metallicity=metallicity,
         )
 
         tau = spectrum['optical_depth']
 #        print("lines out:",tau.units)
         densities        = spectrum['optical_depth_densities']
-        hydrogen_densities = spectrum['optical_depth_hydrogen_densities']
         velocities       = spectrum['optical_depth_velocities']
         temperatures     = spectrum['optical_depth_temperatures']
         pixel_velocities = spectrum['pixel_velocity_kms']
+        hydrogen_densities = spectrum.get('optical_depth_hydrogen_densities', None)
+        metallicities = spectrum.get('optical_depth_metallicities', None)
         
 
         # Apply Voigt for hydrogen profile convolution if required
@@ -425,8 +457,11 @@ class ComputeOpticaldepth:
             'Velocities': velocities, 
             'Temperatures': temperatures, 
             'TotalIonColumnDensity': total_column_density,
-            'HydrogenDensities': hydrogen_densities
         }
+        if hydrogen_densities is not None:
+            output['HydrogenDensities'] = hydrogen_densities
+        if metallicities is not None:
+            output['Metallicities'] = metallicities
         
         return output
 

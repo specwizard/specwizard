@@ -161,14 +161,13 @@ class SightLineProjection:
         # element densities
         rho_element             = {}
         nunit                   = particles['Densities']['Info'].copy()
-        nunit['VarDescription'] = 'Element mass-densities'
+        nunit['VarDescription'] = 'Element mass densities'
         vunit                   = particles['Velocities']['Info'].copy()
         vunit["VarDescription"] = 'Element-weighted velocities'
         tunit                   = particles['Temperatures']['Info'].copy()
         tunit["VarDesciption"]  = 'Element-weighted temperatures '
         zunit                   = particles['Metallicities']['Info'].copy()
-        zunit['VarDescription'] = 'Mass-weighted metallicity'
-        runit                   = self.SetUnit(vardescription="Ion-weighted total gas density", aFact=0.0, hFact=0.0)
+        zunit['VarDescription'] = 'Element-weighted metallicity'
 
         # properties per element
         for element in elementnames:
@@ -189,6 +188,7 @@ class SightLineProjection:
         tunit["VarDesciption"]  = 'Ion-weighted temperatures'
         zunit                   = particles['Metallicities']['Info'].copy()
         zunit['VarDescription'] = 'Ion-weighted metallicity'
+        runit                   = self.SetUnit(vardescription="Ion-weighted total gas density", aFact=0.0, hFact=0.0)
         
 
         # variables per ion
@@ -211,7 +211,7 @@ class SightLineProjection:
         nH_cgs           = (self.to_physical(particles['Densities']).in_cgs() * hydrogenfraction / constants["mH"]).value
         temperature      = (self.to_physical(particles['Temperatures']).in_cgs()).value
         density, density_unit  = (self.to_physical(particles['Densities']).in_cgs()).value, (self.to_physical(particles['Densities']).in_cgs()).units
-        #              
+        #Redshift has no units so no .in_cgs() conversion               
         Z                = (self.to_physical(particles['Metallicities'])).value
         redshift         = header["Cosmo"]["Redshift"] + np.zeros_like(temperature)
         for element in elementnames:
@@ -387,7 +387,17 @@ class SightLineProjection:
             rho_element[element]['Densities']['Value']    *= dens_unyts
             rho_element[element]['Velocities']['Value']   *= vel_unyts
             rho_element[element]['Temperatures']['Value'] *= temp_unyts      
-            
+
+
+        #We save the hydrogen number density and copy it into both the simion and ion weighted dictionaries
+        #This will be used to compute pure optical depth weighted hydrogen number density      
+        hydrogen_number_density = rho_element["Hydrogen"]['Densities']['Value']
+        hydrogen_unit = particles['Densities']['Info'].copy()
+        hydrogen_unit['VarDescription'] = 'hydrogen number density'
+        hydrogen_number_density = {
+            'Value': rho_element['Hydrogen']['Densities']['Value'] / constants['mH'],
+            'Info': hydrogen_unit,
+        }
 
         for (element, ion) in ions:            
 
@@ -396,13 +406,15 @@ class SightLineProjection:
             rho_ion[ion]['MassDensities']['Value'][mask]  /= rho_ion[ion]['Densities']['Value'][mask]
             rho_ion[ion]['Temperatures']['Value'][mask]   /= rho_ion[ion]['Densities']['Value'][mask]
             rho_ion[ion]['Metallicities']['Value'][mask]  /= rho_ion[ion]['Densities']['Value'][mask]
-
             rho_ion[ion]['Densities']['Value']     *= dens_unyts  
             rho_ion[ion]['Velocities']['Value']    *= vel_unyts
             rho_ion[ion]['MassDensities']['Value'] *= density_unit 
             rho_ion[ion]['Temperatures']['Value']  *= temp_unyts
-            
-        
+            rho_ion[ion]['HydrogenDensities']       = {
+                                                'Value': hydrogen_number_density['Value'].copy(),
+                                                'Info': hydrogen_number_density['Info'].copy(),}
+
+    
         # prepare output
         unit                   = particles["Positions"]['Info'].copy()
         unit["VarDescription"] = 'pixel size'
@@ -438,7 +450,11 @@ class SightLineProjection:
                 rho_ion_sim[SimIon]['MassDensities']['Value']    *= density_unit                
                 rho_ion_sim[SimIon]['Velocities']['Value']       *= vel_unyts
                 rho_ion_sim[SimIon]['Temperatures']['Value']     *= temp_unyts
-                
+                rho_ion_sim[SimIon]['HydrogenDensities']          = {
+                                                                    'Value': hydrogen_number_density['Value'].copy(),
+                                                                    'Info': hydrogen_number_density['Info'].copy(),
+                                                                }
+                                                                
 
 
 

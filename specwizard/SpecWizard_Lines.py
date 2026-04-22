@@ -69,7 +69,7 @@ class Lines:
         return fnew    
 
     @accepts(column_densities=length**-2,b_kms=length/time,vion_kms=length/time,Tions=temperature)
-    def gaussian(self, column_densities = 0, b_kms = 0,vion_kms=0,Tions= 0, mass_densities=0):
+    def gaussian(self, column_densities = 0, b_kms = 0,vion_kms=0,Tions= 0, mass_densities=0, hydrogen_number_densities=0):
         '''
             column_density = ion column density in ions / cm^2
             density        = mass density of the gas
@@ -77,6 +77,7 @@ class Lines:
             vion_kms       = peculiar velocity
             Tions          = temperature of the gas
             mass_densities = (total) density of the gas 
+            hydrogen_number_densities = hydrogen number density of the gas
         '''
 
         naturalwidth_kms = self.naturalwidth    # natural line width        [km/s]
@@ -97,6 +98,7 @@ class Lines:
         densities    = np.zeros_like(pixel_velocity_kms) #* column_densities
         velocities   = np.zeros_like(pixel_velocity_kms) #* vion_kms
         temperatures = np.zeros_like(pixel_velocity_kms) #* Tions.units
+        hydrogen_densities = np.zeros_like(pixel_velocity_kms) #* hydrogen_number_densities.units
 
         no_unyt_pixel_velocity_kms = pixel_velocity_kms.in_cgs().value
 
@@ -106,7 +108,10 @@ class Lines:
         vion_unit, no_unyt_vion_kms    = vion_kms.in_cgs().units, vion_kms.in_cgs().value
         T_unit, no_unyt_Tions          = Tions.in_cgs().units, Tions.in_cgs().value
         d_unit, no_unyt_mass_densities = mass_densities.in_cgs().units, mass_densities.in_cgs().value
-        for column_density, b, vel, Tion, mass_density in zip(no_unyt_column_densities, no_unyt_b_kms, no_unyt_vion_kms,no_unyt_Tions, no_unyt_mass_densities):
+        h_unit, no_unyt_H_densities    = hydrogen_number_densities.in_cgs().units, hydrogen_number_densities.in_cgs().value
+        
+
+        for i, (column_density, b, vel, Tion, mass_density,H_density) in enumerate(zip(no_unyt_column_densities, no_unyt_b_kms, no_unyt_vion_kms,no_unyt_Tions, no_unyt_mass_densities,no_unyt_H_densities)):
             if column_density >0:
                 # scale b-parameter
                 v_line = b * verf
@@ -118,7 +123,8 @@ class Lines:
                 tau          += g_int
                 densities    += g_int * mass_density
                 velocities   += g_int * vel
-                temperatures += g_int * Tion            
+                temperatures += g_int * Tion
+                hydrogen_densities += g_int * H_density
 
         # normalize to pixel size
         pix_cms       = self.pix_kms.in_cgs().value
@@ -126,11 +132,13 @@ class Lines:
         velocities   /= pix_cms
         temperatures /= pix_cms
         densities    /= pix_cms
+        hydrogen_densities /= pix_cms
         
         # Give back units 
         densities    *= d_unit 
         velocities   *= vion_unit 
         temperatures *= T_unit
+        hydrogen_densities *= h_unit
         nint = self.npix
         
         if periodic:
@@ -139,38 +147,46 @@ class Lines:
             densities    = densities[0:nint] + densities[nint:2*nint] + densities[2*nint:3*nint]
             velocities   = velocities[0:nint] + velocities[nint:2*nint] + velocities[2*nint:3*nint]
             temperatures = temperatures[0:nint] + temperatures[nint:2*nint] + temperatures[2*nint:3*nint]
+            hydrogen_densities = hydrogen_densities[0:nint] + hydrogen_densities[nint:2*nint] + hydrogen_densities[2*nint:3*nint]
             
         else:
             tau   = tau[nint:2*nint]
             pixel_velocity_kms = pixel_velocity_kms[nint:2*nint] 
             densities    = densities[nint:2*nint] 
             velocities   = velocities[nint:2*nint]
-            temperatures = temperatures[nint:2*nint]            
+            temperatures = temperatures[nint:2*nint]
+            hydrogen_densities = hydrogen_densities[nint:2*nint]
         mask = tau > 0
         
         #Normalize optical depth-weighted  quantities 
         densities[mask]     /=  tau[mask]
         velocities[mask]    /=  tau[mask]
         temperatures[mask]  /=  tau[mask]
+        hydrogen_densities[mask] /= tau[mask]
         
 
         # compute total column density
         nh_tot = np.cumsum(tau)[-1] * pix_cms / self.sigma.in_cgs()
 
-        # Set units for velocities, temperatures and densities
+        # Set units for velocities, temperatures and densities (for ions and hydrogen)
         vunit        = self.SetUnit(vardescription="Tau weighted ion peculiar velocity", aFact=0.0, hFact=0.0)
         velocities   = {'Value': velocities, 'Info': vunit}
         tunit        = self.SetUnit(vardescription="Tau weighted ion temperature", aFact=0.0, hFact=0.0)
         temperatures = {'Value': temperatures, 'Info': tunit}
         dunit        = self.SetUnit(vardescription="Tau weighted mass density", aFact=0.0, hFact=0.0)
         densities    = {'Value': densities, 'Info': dunit}
+        hunit        = self.SetUnit(vardescription="Tau weighted hydrogen number density", aFact=0.0, hFact=0.0)
+        hydrogen_densities = {'Value': hydrogen_densities, 'Info': hunit}
         tauunit      = self.SetUnit(vardescription="Ionic optical depth", aFact=0.0, hFact=0.0)
         tau          = {'Value': tau, 'Info': tauunit}
+
+        
 
         
         spectrum = {'pixel_velocity_kms':pixel_velocity_kms,
             'optical_depth':tau,
             'optical_depth_densities':densities,
+            'optical_depth_hydrogen_densities':hydrogen_densities,
             'optical_depth_velocities':velocities,
             'optical_depth_temperatures':temperatures,
             'total_column_density':nh_tot}

@@ -167,7 +167,7 @@ class OpticalDepth_IO:
         
         #
         variables    = ['Velocities', 'Densities', 'Temperatures']
-        od_variables = variables + ['TotalIonColumnDensity']
+        od_variables = variables + ['TotalIonColumnDensity', 'HydrogenDensities']
         # create group for each element
         for element in self.elements:
             elementgroup = groupname + '/' + element
@@ -323,7 +323,7 @@ class OpticalDepth_IO:
         
         #
         variables    = ['Velocities', 'Densities', 'Temperatures']
-        od_variables = variables + ['TotalIonColumnDensity']
+        od_variables = variables + ['TotalIonColumnDensity', 'HydrogenDensities']
         # create group for each element
         for element in self.elements:
             elementgroup = groupname + '/' + element

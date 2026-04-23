@@ -414,7 +414,7 @@ class InputFunctions:
 
             for elementname in elements2do:
                 #now ElementAbundace can also be switched to ElementAbundanceDiffuse 
-                values  = read_variable(varname = groupname +'/'+ groupdic['ElementAbundanceDiffuse']+'/'+ elementname)['Value']
+                values  = read_variable(varname = groupname +'/'+ groupdic['ElementAbundance']+'/'+ elementname)['Value']
                 info    = unit
                 abundances[elementname] = {'Value':values, 'Info': unit}
         except:

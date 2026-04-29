@@ -488,7 +488,7 @@ class LongSpectra:
         ions2do = self.check_if_ion_contaminates(ions_we_want)
         long_spectra   = {}
         ion_field_meta = {}
-        field_names = ["Optical depths", "Velocities", "Densities", "Temperatures"]
+        field_names = ["Optical depths", "Velocities", "Densities", "Temperatures", "Metallicities", "HydrogenDensities" ]
         
         long_spectra['velocities'] = velocity_array
         long_spectra['wavelengths'] = self.lambda_min * np.exp(velocity_array/c_kms)
@@ -501,6 +501,8 @@ class LongSpectra:
             long_spectra['Ions'][ions]['Velocities'] = long_tau.copy()
             long_spectra['Ions'][ions]['Densities'] = long_tau.copy()
             long_spectra['Ions'][ions]['Temperatures'] = long_tau.copy()
+            long_spectra['Ions'][ions]['Metallicities'] = long_tau.copy()
+            long_spectra['Ions'][ions]['HydrogenDensities'] = long_tau.copy()
             long_spectra['Ions'][ions]["lambda0"] = 0
             long_spectra['Ions'][ions]["f-value"]= 0
 
@@ -537,6 +539,8 @@ class LongSpectra:
             "Velocities": unyt.km / unyt.s,
             "Densities": unyt.cm**-3,
             "Temperatures": unyt.K,
+            "Metallicities": unyt.dimensionless,
+            "HydrogenDensities": unyt.cm**-3,
         }
         for ions in ions2do:
             if ions not in long_spectra['Ions']:

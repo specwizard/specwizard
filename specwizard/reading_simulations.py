@@ -1052,8 +1052,8 @@ class ReadSwift:
             ionfrac = self.read_variable(varname = groupname + '/' + field_name)
             particles['SimulationIonFractions'] = {}
             particles['SimulationIonFractions']["H I"] = ionfrac
-        #Check if only the simulation ion fraction should be read!
-        if (self.simtype == 'colibre' and self.readIonFrac):
+        #Read ion fractions for colibre if they are not already read from the file.
+        if (self.simtype == 'colibre'):
             particles['SimulationIonFractions'] = self.inputfunc.ReadAndShapeIonFrac(self.read_variable,particles,groupname)
         
         if self.fileparams['ionparams']['SFR_properties']['modify_particle']:

@@ -321,6 +321,8 @@ class LongSpectra:
             tau         = opticaldepth[ion]['Optical depths']['Value']
             vel        = opticaldepth[ion]['Velocities']['Value']
             temp       = opticaldepth[ion]['Temperatures']['Value']
+            metal      = opticaldepth[ion]['Metallicities']['Value']
+            Hdens       = opticaldepth[ion]['HydrogenDensities']['Value']
             dens        = opticaldepth[ion]['Densities']['Value']
             lambda0     = opticaldepth[ion]['lambda0']
             fvalue      = opticaldepth[ion]['f-value']
@@ -329,6 +331,8 @@ class LongSpectra:
             extended_temp = extend_array(temp)
             extended_vel = extend_array(vel)
             extended_dens = extend_array(dens)
+            extended_metal = extend_array(metal)
+            extended_Hdens = extend_array(Hdens)
             if roll:
                 if amount_rolled ==0:
                     nindx = len(extended_tau)-1
@@ -351,6 +355,8 @@ class LongSpectra:
             rebinned_temp  = self.Rebin(extended_temp,self.velocity_array,velarr_extended)
             rebinned_vel   = self.Rebin(extended_vel,self.velocity_array,velarr_extended)
             rebinned_dens  = self.Rebin(extended_dens,self.velocity_array,velarr_extended)
+            rebinned_metal = self.Rebin(extended_metal,self.velocity_array,velarr_extended)
+            rebinned_Hdens = self.Rebin(extended_Hdens,self.velocity_array,velarr_extended)
 
             indx_in    = self.find_index(self.velocity_array,line_velstart)
             indx_fn    = self.find_index(self.velocity_array,line_velend)
@@ -361,11 +367,15 @@ class LongSpectra:
                 long_spectra['Ions'][ion]["Velocities"] += 0
                 long_spectra['Ions'][ion]["Densities"] += 0
                 long_spectra['Ions'][ion]["Temperatures"] += 0
+                long_spectra['Ions'][ion]["Metallicities"] += 0
+                long_spectra['Ions'][ion]["HydrogenDensities"] += 0
             else:
                 long_spectra['Ions'][ion]["Optical depths"][indx_in:indx_fn] += rebinned_tau[indx_in:indx_fn]
                 long_spectra['Ions'][ion]["Velocities"][indx_in:indx_fn] += rebinned_vel[indx_in:indx_fn] + line_velstart          
                 long_spectra['Ions'][ion]["Temperatures"][indx_in:indx_fn] += rebinned_temp[indx_in:indx_fn]
                 long_spectra['Ions'][ion]["Densities"][indx_in:indx_fn] += rebinned_dens[indx_in:indx_fn]
+                long_spectra['Ions'][ion]["Metallicities"][indx_in:indx_fn] += rebinned_metal[indx_in:indx_fn]
+                long_spectra['Ions'][ion]["HydrogenDensities"][indx_in:indx_fn] += rebinned_Hdens[indx_in:indx_fn]
 
             if long_spectra['Ions'][ion]["lambda0"] == 0:
                 long_spectra['Ions'][ion]["lambda0"] = lambda0 

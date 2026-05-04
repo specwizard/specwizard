@@ -114,14 +114,10 @@ class ComputeOpticaldepth:
             
             for ion in projectionIW.keys():
                 for key in ['Densities', 'Velocities', 'Temperatures', 'MassDensities', 'HydrogenDensities', 'Metallicities']:
-                    #no units
-                    if key == "Metallicities":
-                        temp_array                             = np.zeros_like(extended_vel_kms)
-                        temp_array[start_indx:start_indx+npix] = projectionIW[ion][key]['Value'].copy()
-                    else:
-                        temp_array                             = np.zeros_like(extended_vel_kms)
-                        temp_array[start_indx:start_indx+npix] = projectionIW[ion][key]['Value'].copy()
-                        projectionIW[ion][key]['Value']        = temp_array
+                    
+                    temp_array                             = np.zeros_like(extended_vel_kms)
+                    temp_array[start_indx:start_indx+npix] = projectionIW[ion][key]['Value'].copy()
+                    projectionIW[ion][key]['Value']        = temp_array
 
             
                 
@@ -130,14 +126,10 @@ class ComputeOpticaldepth:
                 projectionSimIon = projection["Projection"]['SimIon-weighted']
                 for ion in projectionSimIon.keys():
                     for key in ['Densities', 'Velocities', 'Temperatures','MassDensities', 'HydrogenDensities', 'Metallicities']:
-                        #no units
-                        if key == "Metallicities":
-                            temp_array                             = np.zeros_like(extended_vel_kms)
-                            temp_array[start_indx:start_indx+npix] = projectionSimIon[ion][key]['Value'].copy()
-                        else:
-                            temp_array                             = np.zeros_like(extended_vel_kms)
-                            temp_array[start_indx:start_indx+npix] = projectionSimIon[ion][key]['Value'].copy()
-                            projectionSimIon[ion][key]['Value']    = temp_array
+                        
+                        temp_array                             = np.zeros_like(extended_vel_kms)
+                        temp_array[start_indx:start_indx+npix] = projectionSimIon[ion][key]['Value'].copy()
+                        projectionSimIon[ion][key]['Value']    = temp_array
     
             sightparams['vel_kms'] = extended_vel_kms
             sightparams['sight_kms'] = extended_vel_kms.max()

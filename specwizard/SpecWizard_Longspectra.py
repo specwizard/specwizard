@@ -387,7 +387,9 @@ class LongSpectra:
 
     def create_coven(self):
         '''
-        explain what is a coven
+        A coven is a list of dictionaries, each dictionary contains the information of a sightline that will be used to create the long spectrum, 
+        this includes the redshift of the sightline, the file name, and the specific parameters of the sightline that are needed to read it and project it. 
+        We call it coven because it is a collection of sightlines that will be used together to create the long spectrum.
         '''
 
 

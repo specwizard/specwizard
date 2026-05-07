@@ -337,11 +337,13 @@ class LongSpectra:
                 if amount_rolled ==0:
                     nindx = len(extended_tau)-1
                     amount_rolled = nindx-np.where(extended_tau==extended_tau.min())[0].max()
-                    rolled = np.roll(extended_tau,amount_rolled)
-                else:
-                    rolled = np.roll(extended_tau,amount_rolled)
-                    
-                extended_tau = rolled
+                #roll all the arrays so the minimum is at the end of the array, this to avoid problems with sharp edges when rebinning
+                extended_tau = np.roll(extended_tau, amount_rolled)
+                extended_temp = np.roll(extended_temp, amount_rolled)
+                extended_vel = np.roll(extended_vel, amount_rolled)
+                extended_dens = np.roll(extended_dens, amount_rolled)
+                extended_metal = np.roll(extended_metal, amount_rolled)
+                extended_Hdens = np.roll(extended_Hdens, amount_rolled)
             
             
             llinelambda_start = lambda0 * (1 +z_sim) 

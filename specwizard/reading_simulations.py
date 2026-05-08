@@ -350,8 +350,9 @@ class InputFunctions:
 
             col_ions_formated = np.array([self.FormatTxt(col_ion) for col_ion in col_ions])
             req_ions_formated = np.array([self.FormatTxt(ion) for _, ion in userions])
-            ions_we_have = np.where(np.intersect1d(col_ions_formated,req_ions_formated))[0]
-            
+            # Use in1d 
+            mask_req_in_col = np.in1d(req_ions_formated, col_ions_formated)
+            ions_we_have = np.where(mask_req_in_col)[0]
             for elements, ion in np.array(userions)[ions_we_have]:
                 mass_e   =  elements_info[elements]['Weight'] * constants['amu']
                 ne       = dens_cgs * Abundances[elements]['Value'] / mass_e

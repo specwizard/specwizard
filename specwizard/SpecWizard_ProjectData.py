@@ -79,7 +79,7 @@ class SightLineProjection:
         
         DAbund        = (Minitial/Mgas) * (Primordial_H/Hfrac) * Primordial_DH
         
-        return Primordial_DH
+        return np.zeros_like(DAbund) + Primordial_DH
     
     def ProjectData(self, sightlinedata,ReadIonfrac=False):
         ''' Interpolate particle properties to a sight line'''

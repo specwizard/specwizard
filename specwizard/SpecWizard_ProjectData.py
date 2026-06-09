@@ -218,10 +218,10 @@ class SightLineProjection:
                 massfraction   =  hydrogenfraction * self.CalculateHDI(header, hydrogenfraction, particles["Masses"])
             else:    
                 massfraction   = (self.to_physical(particles["Abundances"][element]).in_cgs()).value
-                ParticleAbundances[element] = {}
-                ParticleAbundances[element]["massfraction"] = massfraction  # fraction of this element by mass
-                ParticleAbundances[element]["element mass"] = \
-                    self.specparams["elementparams"][element]["Mass"] * constants["amu"] # mass of element [g]
+            ParticleAbundances[element] = {}
+            ParticleAbundances[element]["massfraction"] = massfraction  # fraction of this element by mass
+            ParticleAbundances[element]["element mass"] = \
+                self.specparams["elementparams"][element]["Mass"] * constants["amu"] # mass of element [g]
 
         # determine ion fractions
         ComputedIonFractions = {}

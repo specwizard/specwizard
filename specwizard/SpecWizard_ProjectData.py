@@ -215,7 +215,10 @@ class SightLineProjection:
         Z                = (self.to_physical(particles['Metallicities'])).value
         redshift         = header["Cosmo"]["Redshift"] + np.zeros_like(temperature)
         for element in elementnames:
-            massfraction   = (self.to_physical(particles["Abundances"][element]).in_cgs()).value
+            if element == 'Deuterium':
+                massfraction   =  hydrogenfraction * self.CalculateHDI(header, hydrogenfraction, particles["Masses"].value())
+            else:    
+                massfraction   = (self.to_physical(particles["Abundances"][element]).in_cgs()).value
             ParticleAbundances[element] = {}
             ParticleAbundances[element]["massfraction"] = massfraction  # fraction of this element by mass
             ParticleAbundances[element]["element mass"] = \

@@ -31,7 +31,7 @@ class Elements:
         self.atomdat       = atomfile
 
         # grep parameters
-        self.numeric = '[-+]? (?: (?: \d* \. \d+ ) | (?: \d+ \.? ) )(?: [Ee] [+-]? \d+ ) ?'
+        self.numeric = r'[-+]? (?: (?: \d* \. \d+ ) | (?: \d+ \.? ) )(?: [Ee] [+-]? \d+ ) ?'
         self.rx      = re.compile(self.numeric, re.VERBOSE)
         
                  
@@ -87,7 +87,7 @@ class Elements:
                     states[name] = {}
                     lambda0 = atomfile[element][ion]['lambda0'][...]    
                     fvalue  = atomfile[element][ion]['f-value'][...]
-                    states[name]["Lines"] = {'Lambda0': lambda0, 'f-value': fvalue}
+                    states[name]["Lines"] = {'Lambda0': lambda0, 'f-value': fvalue}                  
             except:
                 print('Element not included in the atomfile')
 

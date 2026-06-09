@@ -290,7 +290,7 @@ class ReadSnap:
             FWHM = 0.362
             particles['SmoothingLengths']["Value"] /= FWHM
             print("We divide Swift's smoothing length by {0:1.3f} to convert from FWHM to extent of finite support".format(FWHM))
-#super uglY need to imporve!!
+            #super uglY need to imporve!!
 
 
         if (self.simtype == 'colibre'):

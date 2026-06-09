@@ -219,13 +219,25 @@ class LongSpectra:
         if len(mask)==0:
 
             return None
+
+        #dont know why the previous code but colibre has sightlines ranging from 0 to 104    
+        if self.sim_type == 'colibre':
+            min_sight = 0
+            max_sight = 104
+        elif random:
+            min_sight = 0
+            max_sight = 99
+        else:
+            min_sight = 1
+            max_sight = 90
+
         if random:
             random_file  = rd.choice(mask) 
-            random_sight = rd.randint(0,99)
+            random_sight = rd.randint(min_sight, max_sight)
 
         else:
             random_file  = mask[0]
-            random_sight = rd.randint(1, 90)
+            random_sight = rd.randint(min_sight, max_sight)
         los_dict[random_file]['nsight'] = random_sight
         return los_dict[random_file]
     
@@ -251,6 +263,21 @@ class LongSpectra:
         atomdat        = self.wizard['ionparams']['atomfile']
         transitions = Elements(atomdat)
         BuildInput.SetIonTableParams(table_type=table_type,iondir=iondir,ions=ElementIons,fname=fname,SFR_properties=SFR_properties,atomfile=atomdat)
+        extra_params = self.wizard.get('extra_parameters', {})
+        BuildInput.ExtraParams(
+            periodic=extra_params.get('periodic', True),
+            kernel=extra_params.get('Kernel', 'Gauss'),
+            pixkms=extra_params.get('pixkms', 1),
+            veloff=extra_params.get('Veloffset', 0),
+            ReadIonFrac=extra_params.get('ReadIonFrac', {
+                'ReadIonFrac': False,
+                'ReadHydrogen': True,
+                'HI': 'NeutralHydrogenAbundance',
+                'ReadHelium': False,
+                'He': '',
+                'fname_urchin': '',
+            }),
+        )
         if self.file_type == 'los':
             wizard    = BuildInput.Sightline(nsight=nsight)
         else:
@@ -281,14 +308,21 @@ class LongSpectra:
         amount_rolled  = 0
         for ion in ions2do:
 
-            if self.paper== False:
-                if self.readion == True:
-                    if ion ==  ('Hydrogen', 'H I'):
-                        opticaldepth[ion]['Optical depths'] = opticaldepth['SimIons'][ion]['Optical depths']
+            if ion not in long_spectra['Ions']:
+                continue
+
+            if ion not in opticaldepth and not ('SimIons' in opticaldepth and ion in opticaldepth['SimIons']):
+                continue
+
+            # Prefer simulation ion fractions whenever present, no self.readout flag for this, just check if they are there and use them if so.
+            if 'SimIons' in opticaldepth and ion in opticaldepth['SimIons']:
+                opticaldepth[ion]['Optical depths'] = opticaldepth['SimIons'][ion]['Optical depths']
 
             tau         = opticaldepth[ion]['Optical depths']['Value']
-            temp        = opticaldepth[ion]['Velocities']['Value']
-            vel         = opticaldepth[ion]['Temperatures']['Value']
+            vel        = opticaldepth[ion]['Velocities']['Value']
+            temp       = opticaldepth[ion]['Temperatures']['Value']
+            metal      = opticaldepth[ion]['Metallicities']['Value']
+            Hdens       = opticaldepth[ion]['HydrogenDensities']['Value']
             dens        = opticaldepth[ion]['Densities']['Value']
             lambda0     = opticaldepth[ion]['lambda0']
             fvalue      = opticaldepth[ion]['f-value']
@@ -297,15 +331,19 @@ class LongSpectra:
             extended_temp = extend_array(temp)
             extended_vel = extend_array(vel)
             extended_dens = extend_array(dens)
+            extended_metal = extend_array(metal)
+            extended_Hdens = extend_array(Hdens)
             if roll:
                 if amount_rolled ==0:
                     nindx = len(extended_tau)-1
                     amount_rolled = nindx-np.where(extended_tau==extended_tau.min())[0].max()
-                    rolled = np.roll(extended_tau,amount_rolled)
-                else:
-                    rolled = np.roll(extended_tau,amount_rolled)
-                    
-                extended_tau = rolled
+                #roll all the arrays so the minimum is at the end of the array, this to avoid problems with sharp edges when rebinning
+                extended_tau = np.roll(extended_tau, amount_rolled)
+                extended_temp = np.roll(extended_temp, amount_rolled)
+                extended_vel = np.roll(extended_vel, amount_rolled)
+                extended_dens = np.roll(extended_dens, amount_rolled)
+                extended_metal = np.roll(extended_metal, amount_rolled)
+                extended_Hdens = np.roll(extended_Hdens, amount_rolled)
             
             
             llinelambda_start = lambda0 * (1 +z_sim) 
@@ -319,6 +357,8 @@ class LongSpectra:
             rebinned_temp  = self.Rebin(extended_temp,self.velocity_array,velarr_extended)
             rebinned_vel   = self.Rebin(extended_vel,self.velocity_array,velarr_extended)
             rebinned_dens  = self.Rebin(extended_dens,self.velocity_array,velarr_extended)
+            rebinned_metal = self.Rebin(extended_metal,self.velocity_array,velarr_extended)
+            rebinned_Hdens = self.Rebin(extended_Hdens,self.velocity_array,velarr_extended)
 
             indx_in    = self.find_index(self.velocity_array,line_velstart)
             indx_fn    = self.find_index(self.velocity_array,line_velend)
@@ -329,11 +369,15 @@ class LongSpectra:
                 long_spectra['Ions'][ion]["Velocities"] += 0
                 long_spectra['Ions'][ion]["Densities"] += 0
                 long_spectra['Ions'][ion]["Temperatures"] += 0
+                long_spectra['Ions'][ion]["Metallicities"] += 0
+                long_spectra['Ions'][ion]["HydrogenDensities"] += 0
             else:
                 long_spectra['Ions'][ion]["Optical depths"][indx_in:indx_fn] += rebinned_tau[indx_in:indx_fn]
                 long_spectra['Ions'][ion]["Velocities"][indx_in:indx_fn] += rebinned_vel[indx_in:indx_fn] + line_velstart          
                 long_spectra['Ions'][ion]["Temperatures"][indx_in:indx_fn] += rebinned_temp[indx_in:indx_fn]
                 long_spectra['Ions'][ion]["Densities"][indx_in:indx_fn] += rebinned_dens[indx_in:indx_fn]
+                long_spectra['Ions'][ion]["Metallicities"][indx_in:indx_fn] += rebinned_metal[indx_in:indx_fn]
+                long_spectra['Ions'][ion]["HydrogenDensities"][indx_in:indx_fn] += rebinned_Hdens[indx_in:indx_fn]
 
             if long_spectra['Ions'][ion]["lambda0"] == 0:
                 long_spectra['Ions'][ion]["lambda0"] = lambda0 
@@ -343,7 +387,9 @@ class LongSpectra:
 
     def create_coven(self):
         '''
-        explain what is a coven
+        A coven is a list of dictionaries, each dictionary contains the information of a sightline that will be used to create the long spectrum, 
+        this includes the redshift of the sightline, the file name, and the specific parameters of the sightline that are needed to read it and project it. 
+        We call it coven because it is a collection of sightlines that will be used together to create the long spectrum.
         '''
 
 
@@ -455,6 +501,8 @@ class LongSpectra:
 
         ions2do = self.check_if_ion_contaminates(ions_we_want)
         long_spectra   = {}
+        ion_field_meta = {}
+        field_names = ["Optical depths", "Velocities", "Densities", "Temperatures", "Metallicities", "HydrogenDensities" ]
         
         long_spectra['velocities'] = velocity_array
         long_spectra['wavelengths'] = self.lambda_min * np.exp(velocity_array/c_kms)
@@ -467,6 +515,8 @@ class LongSpectra:
             long_spectra['Ions'][ions]['Velocities'] = long_tau.copy()
             long_spectra['Ions'][ions]['Densities'] = long_tau.copy()
             long_spectra['Ions'][ions]['Temperatures'] = long_tau.copy()
+            long_spectra['Ions'][ions]['Metallicities'] = long_tau.copy()
+            long_spectra['Ions'][ions]['HydrogenDensities'] = long_tau.copy()
             long_spectra['Ions'][ions]["lambda0"] = 0
             long_spectra['Ions'][ions]["f-value"]= 0
 
@@ -485,14 +535,38 @@ class LongSpectra:
             wizard['ODParams']['VoigtOff'] = True
             cspec                = ComputeOpticaldepth(wizard)
             opticaldepth         = cspec.MakeAllOpticaldepth(projected_LOS)
+            for ion in ions2do:
+                if ion not in opticaldepth:
+                    continue
+                if ion not in ion_field_meta:
+                    ion_field_meta[ion] = {}
+                for key in field_names:
+                    if key in opticaldepth[ion] and 'Value' in opticaldepth[ion][key]:
+                        ion_field_meta[ion][key] = {
+                            'units': opticaldepth[ion][key]['Value'].units,
+                            'Info': opticaldepth[ion][key].get('Info', ''),
+                        }
             long_spectra = self.insert_in_long_spectra(long_spectra,snapshot,projected_LOS,opticaldepth,wizard['ionparams']['Ions'],roll=True)        
         
+        default_units = {
+            "Optical depths": unyt.dimensionless,
+            "Velocities": unyt.km / unyt.s,
+            "Densities": unyt.cm**-3,
+            "Temperatures": unyt.K,
+            "Metallicities": unyt.dimensionless,
+            "HydrogenDensities": unyt.cm**-3,
+        }
         for ions in ions2do:
-            for keys in ["Optical depths","Velocities","Densities","Temperatures"]:
+            if ions not in long_spectra['Ions']:
+                continue
+            for keys in field_names:
                 value = long_spectra['Ions'][ions][keys]
+                meta = ion_field_meta.get(ions, {}).get(keys, {})
+                units = meta.get('units', default_units[keys])
+                info = meta.get('Info', f'Long spectra accumulated field: {keys}. This is a default info string, no specific info found for this field.')
                 long_spectra['Ions'][ions][keys] = {}
-                long_spectra['Ions'][ions][keys]['Value'] = value * opticaldepth[ions][keys]['Value'].units
-                long_spectra['Ions'][ions][keys]['Info']  = opticaldepth[ions][keys]['Info']
+                long_spectra['Ions'][ions][keys]['Value'] = value * units
+                long_spectra['Ions'][ions][keys]['Info']  = info
 
         long_spectra['velocities'] *= unyt.km/unyt.s
         long_spectra['wavelengths'] *= unyt.Angstrom

@@ -73,9 +73,9 @@ class InputFunctions:
             grp_dict[k]= group.attrs[k]
 
         hfile.close()
-
+        
         return dict(grp_dict)
-    
+
     def set_unit(self, vardescription = 'text describing variable', Lunit=constants['Mpc'], aFact=1.0, hFact=1.0):
         """
         Formats into a dictionary the information for converting to CGS units. Using the toCGS function.  
@@ -350,8 +350,9 @@ class InputFunctions:
 
             col_ions_formated = np.array([self.FormatTxt(col_ion) for col_ion in col_ions])
             req_ions_formated = np.array([self.FormatTxt(ion) for _, ion in userions])
-            ions_we_have = np.where(np.intersect1d(col_ions_formated,req_ions_formated))[0]
-            
+            # Use in1d 
+            mask_req_in_col = np.in1d(req_ions_formated, col_ions_formated)
+            ions_we_have = np.where(mask_req_in_col)[0]
             for elements, ion in np.array(userions)[ions_we_have]:
                 mass_e   =  elements_info[elements]['Weight'] * constants['amu']
                 ne       = dens_cgs * Abundances[elements]['Value'] / mass_e
@@ -366,7 +367,7 @@ class InputFunctions:
     
     def set_fractions_metallicity(self,read_variable,particles):
         """
-        Reads the element fraction and metallicities of particles. The metallicy is used in some ionization tables (e.g Ploekinger)
+        Reads the element fraction and metallicities of particles. The metallicity is used in some ionization tables (e.g Ploeckinger)
         
         Since simulations do not contain metallicity or element fraction. This fuction attempts to read the simulation data, if it fails it set some default values
         Sets metallicities to zero 
@@ -404,8 +405,7 @@ class InputFunctions:
 
         if self.snaptype == 'los':
             groupname    = groupdic['groupname'].format(self.sightline['nsight'])
-
-        
+            
         try:    
             
 
@@ -414,7 +414,7 @@ class InputFunctions:
 
 
             for elementname in elements2do:
-
+                #now ElementAbundace can also be switched to ElementAbundanceDiffuse 
                 values  = read_variable(varname = groupname +'/'+ groupdic['ElementAbundance']+'/'+ elementname)['Value']
                 info    = unit
                 abundances[elementname] = {'Value':values, 'Info': unit}
@@ -427,7 +427,7 @@ class InputFunctions:
 
         #Check if metallicities are available. 
         try: 
-            metallicity  =read_variable(varname = groupname + '/' + groupdic['Metallicities'])
+            metallicity  = read_variable(varname = groupname + '/' + groupdic['Metallicities'])
         except:
             print("Warning! Metallicities not found. Setting them to zero.")
             metallicity = np.zeros_like(particles['Densities']['Value'])
@@ -1048,15 +1048,13 @@ class ReadSwift:
         FWHM = 0.362
         particles['SmoothingLengths']["Value"] /= FWHM
         print("We divide Swift's smoothing length by {0:1.3f} to convert from FWHM to extent of finite support".format(FWHM))
-
         if (self.simtype == 'swift' and self.readIonFrac):
-            print("this is happening")
             field_name= self.fileparams['extra_parameters']['ReadIonFrac']['HI']
             ionfrac = self.read_variable(varname = groupname + '/' + field_name)
             particles['SimulationIonFractions'] = {}
             particles['SimulationIonFractions']["H I"] = ionfrac
+        #Read ion fractions for colibre if they are not already read from the file.
         if (self.simtype == 'colibre'):
-            
             particles['SimulationIonFractions'] = self.inputfunc.ReadAndShapeIonFrac(self.read_variable,particles,groupname)
         
         if self.fileparams['ionparams']['SFR_properties']['modify_particle']:
@@ -1082,15 +1080,60 @@ class ReadSwift:
         
         if self.snaptype == 'los':
             hfile  = h5py.File(self.fname, "r")
-            values = np.array(hfile[varname][...])
+            varname_frmtd = varname.split("/")
+            groupname = varname_frmtd[0] + '/' + varname_frmtd[1]
+            
+
+            if varname_frmtd[1] == self.groupdic['ElementAbundance'] or varname_frmtd[1] == self.groupdic['ElementAbundanceDiffuse']:
+                element_list_raw = hfile["SubgridScheme/NamedColumns/" + varname_frmtd[1]][...]
+                #bit decoding
+                element_list = np.array([
+                    one.decode("utf-8") if isinstance(one, (bytes, np.bytes_)) else str(one)
+                    for one in element_list_raw
+                ])
+                matched = np.where(element_list == varname_frmtd[2])[0]
+                if len(matched) == 0:
+                    raise KeyError(
+                        "Element '{}' not found in {} columns: {}".format(
+                            varname_frmtd[2], varname_frmtd[1], list(element_list)
+                        )
+                    )
+                element_index = int(matched[0])
+                
+                values = hfile[groupname][:,element_index]
+                
+                info_s   = self.inputfunc.read_group(groupname = groupname)
+            
+            elif varname_frmtd[1] == self.groupdic['IonFractions'] or varname_frmtd[1] == 'ReducedSpeciesFractions':
+                species_list_raw = hfile["SubgridScheme/NamedColumns/" + varname_frmtd[1]][...]
+                #bit decoding
+                species_list = np.array([
+                    one.decode("utf-8") if isinstance(one, (bytes, np.bytes_)) else str(one)
+                    for one in species_list_raw
+                ])
+                matched = np.where(species_list == varname_frmtd[2])[0]
+                if len(matched) == 0:
+                    raise KeyError(
+                        "Species '{}' not found in {} columns: {}".format(
+                            varname_frmtd[2], varname_frmtd[1], list(species_list)
+                        )
+                    )
+                element_index = int(matched[0])
+                
+                values = hfile[groupname][:,element_index]
+                
+                info_s   = self.inputfunc.read_group(groupname = groupname)
+            else:
+                values = np.array(hfile[varname][...])
             hfile.close()
-            info_s  = self.inputfunc.read_group(groupname = varname)
+            
+            info_s  = self.inputfunc.read_group(groupname = groupname)
 
         if self.snaptype =='snapshot':
             
             varname_frmtd = varname.split("/")
             
-            swiftsimio_format = self.swiftswimio_format(varname = varname_frmtd[1])
+            swiftsimio_format = self.swiftswimio_format(varname = varname_frmtd[1]) 
 
             if varname_frmtd[1] == self.groupdic['ElementAbundance']:
                 element_format = self.swiftswimio_format(varname = varname_frmtd[2])
@@ -1137,9 +1180,10 @@ class ReadSwift:
         out : str
         Formated string 
         """
-        varname_formated = re.sub(r"([A-Z])", r"_\1", varname)
 
-        return varname_formated[1:].lower()
+        #changed so element abundances and ion fractions can be read with swiftsimio without cutting of first letter because of capitalization
+        varname_formated = re.sub(r"(?<!^)([A-Z])", r"_\1", varname)
+        return varname_formated.lower()
 
     
 class ReadHydrangea:

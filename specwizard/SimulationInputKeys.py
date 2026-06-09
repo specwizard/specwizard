@@ -135,7 +135,9 @@ def get_simkeys(sim_name='eagle'):
             'los': {
                 'elementnames': elementnames_swift,
                 'groupname': 'LOS_{:04d}',
-                'ElementAbundance': 'ElementMassFractionsInGas',
+                #changed this
+                'ElementAbundance': 'ElementMassFractions',
+                'ElementAbundanceDiffuse': 'ElementMassFractionsDiffuse',
                 'Densities': 'Densities',
                 'SmoothingLengths': 'SmoothingLengths',
                 'Masses': 'Masses',

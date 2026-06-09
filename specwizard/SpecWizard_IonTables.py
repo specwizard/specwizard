@@ -9,7 +9,163 @@ import os
 import numpy as np 
 import scipy.interpolate as interpolate
 
-
+CHIMES_DICT = {"elec": 0,
+                    "HI": 1,
+                    "HII": 2,
+                    "Hm": 3,
+                    "HeI": 4,
+                    "HeII": 5,
+                    "HeIII": 6,
+                    "CI": 7,
+                    "CII": 8,
+                    "CIII": 9,
+                    "CIV": 10,
+                    "CV": 11,
+                    "CVI": 12,
+                    "CVII": 13,
+                    "Cm": 14,
+                    "NI": 15,
+                    "NII": 16,
+                    "NIII": 17,
+                    "NIV": 18,
+                    "NV": 19,
+                    "NVI": 20,
+                    "NVII": 21,
+                    "NVIII": 22,
+                    "OI": 23,
+                    "OII": 24,
+                    "OIII": 25,
+                    "OIV": 26,
+                    "OV": 27,
+                    "OVI": 28,
+                    "OVII": 29,
+                    "OVIII": 30,
+                    "OIX": 31,
+                    "Om": 32,
+                    "NeI": 33,
+                    "NeII": 34,
+                    "NeIII": 35,
+                    "NeIV": 36,
+                    "NeV": 37,
+                    "NeVI": 38,
+                    "NeVII": 39,
+                    "NeVIII": 40,
+                    "NeIX": 41,
+                    "NeX": 42,
+                    "NeXI": 43,
+                    "MgI": 44,
+                    "MgII": 45,
+                    "MgIII": 46,
+                    "MgIV": 47,
+                    "MgV": 48,
+                    "MgVI": 49,
+                    "MgVII": 50,
+                    "MgVIII": 51,
+                    "MgIX": 52,
+                    "MgX": 53,
+                    "MgXI": 54,
+                    "MgXII": 55,
+                    "MgXIII": 56,
+                    "SiI": 57,
+                    "SiII": 58,
+                    "SiIII": 59,
+                    "SiIV": 60,
+                    "SiV": 61,
+                    "SiVI": 62,
+                    "SiVII": 63,
+                    "SiVIII": 64,
+                    "SiIX": 65,
+                    "SiX": 66,
+                    "SiXI": 67,
+                    "SiXII": 68,
+                    "SiXIII": 69,
+                    "SiXIV": 70,
+                    "SiXV": 71,
+                    "SI": 72,
+                    "SII": 73,
+                    "SIII": 74,
+                    "SIV": 75,
+                    "SV": 76,
+                    "SVI": 77,
+                    "SVII": 78,
+                    "SVIII": 79,
+                    "SIX": 80,
+                    "SX": 81,
+                    "SXI": 82,
+                    "SXII": 83,
+                    "SXIII": 84,
+                    "SXIV": 85,
+                    "SXV": 86,
+                    "SXVI": 87,
+                    "SXVII": 88,
+                    "CaI": 89,
+                    "CaII": 90,
+                    "CaIII": 91,
+                    "CaIV": 92,
+                    "CaV": 93,
+                    "CaVI": 94,
+                    "CaVII": 95,
+                    "CaVIII": 96,
+                    "CaIX": 97,
+                    "CaX": 98,
+                    "CaXI": 99,
+                    "CaXII": 100,
+                    "CaXIII": 101,
+                    "CaXIV": 102,
+                    "CaXV": 103,
+                    "CaXVI": 104,
+                    "CaXVII": 105,
+                    "CaXVIII": 106,
+                    "CaXIX": 107,
+                    "CaXX": 108,
+                    "CaXXI": 109,
+                    "FeI": 110,
+                    "FeII": 111,
+                    "FeIII": 112,
+                    "FeIV": 113,
+                    "FeV": 114,
+                    "FeVI": 115,
+                    "FeVII": 116,
+                    "FeVIII": 117,
+                    "FeIX": 118,
+                    "FeX": 119,
+                    "FeXI": 120,
+                    "FeXII": 121,
+                    "FeXIII": 122,
+                    "FeXIV": 123,
+                    "FeXV": 124,
+                    "FeXVI": 125,
+                    "FeXVII": 126,
+                    "FeXVIII": 127,
+                    "FeXIX": 128,
+                    "FeXX": 129,
+                    "FeXXI": 130,
+                    "FeXXII": 131,
+                    "FeXXIII": 132,
+                    "FeXXIV": 133,
+                    "FeXXV": 134,
+                    "FeXXVI": 135,
+                    "FeXXVII": 136,
+                    "H2": 137,
+                    "H2p": 138,
+                    "H3p": 139,
+                    "OH": 140,
+                    "H2O": 141,
+                    "C2": 142,
+                    "O2": 143,
+                    "HCOp": 144,
+                    "CH": 145,
+                    "CH2": 146,
+                    "CH3p": 147,
+                    "CO": 148,
+                    "CHp": 149,
+                    "CH2p": 150,
+                    "OHp": 151,
+                    "H2Op": 152,
+                    "H3Op": 153,
+                    "COp": 154,
+                    "HOCp": 155,
+                    "O2p": 156}
 class IonTables:
     """
     Reads and interpolates ionization tables for calculating ion fractions.
@@ -28,6 +184,7 @@ class IonTables:
         """        
         self.specparams   = specparams
         self.iontable_info = specparams['ionparams']
+       
         
     def ReadIonizationTable(self, ion='H I'):
         
@@ -41,6 +198,7 @@ class IonTables:
             tuple: Ionization table contents.
                 - If `table_type` is 'specwizard_cloudy': ((redshift, Log_temperature, Log_nH), Log_Abundance).
                 - If `table_type` is 'ploeckinger': ((redshift, Log_temperature, Log_(Z/Zsol), Log_nH), Log_Abundance).
+                - If `table_type` is 'chimes': ((redshift, Log_temperature, Log_(Z/Zsol), Log_nH), Log_Abundance).
 
         Raises:
             FileNotFoundError: If the required ionization table file does not exist.
@@ -107,6 +265,45 @@ class IonTables:
             #
             
             return ((z, LogT, LognH, LogZ), LogAbundance)
+
+
+
+        if iontable_info["table_type"] == 'chimes':
+            #CHIMES needs romal numerals to be removed and spaces to be removed to match the keys in the CHIMES_DICT
+            ion_key = ion.replace(' ', '')
+            
+
+            element_index = CHIMES_DICT[ion_key]
+            iondir = iontable_info["iondir"]
+
+            # Build a redshift-resolved table by stacking all z*.hdf5 files in iondir.
+            redshift_pattern = re.compile(r"^z(?P<z>\d+(?:\.\d+)?)(?:_eqm)?\.hdf5$")
+            redshift_files = []
+            for onefile in os.listdir(iondir):
+                match = redshift_pattern.match(onefile)
+                if match:
+                    redshift_files.append((float(match.group("z")), os.path.join(iondir, onefile)))
+
+            redshift_files.sort(key=lambda x: x[0])
+            z = np.array([item[0] for item in redshift_files])
+
+            first_file = redshift_files[0][1]
+            hf0 = h5py.File(first_file, "r")
+            LogT = hf0["TableBins/Temperatures"][:]
+            LognH = hf0["TableBins/Densities"][:]
+            LogZ = hf0["TableBins/Metallicities"][:]
+            hf0.close()
+
+            # Final table ordering matches ploeckinger interpolation usage: (z, T, Z, nH).
+            LogAbundance = np.empty((len(z), len(LogT), len(LogZ), len(LognH)))
+
+            for i, (_, filepath) in enumerate(redshift_files):
+                hf = h5py.File(filepath, "r")
+                # File layout is (T, nH, Z, species). Move to match (T, Z, nH).
+                LogAbundance[i] = np.transpose(hf["Abundances"][:, :, :, element_index], (0, 2, 1))
+                hf.close()
+            
+            return ((z, LogT, LognH, LogZ), LogAbundance)
         
         if iontable_info["table_type"] == 'cloudy_hm01':
             ion_element_short = (''.join(re.split('I|  |V|X|', ion))).strip().lower()
@@ -132,6 +329,9 @@ class IonTables:
             hf.close()
             #
             return ((z, LogT, LognH), LogAbundance)
+
+
+        
     def RomanNumeral(self, i):
         """
         Converts a decimal number to a Roman numeral.
@@ -188,7 +388,7 @@ class IonTables:
             redshift (float): Redshift of the particles.
             nH_density (float): Proper hydrogen density (particles/cm³).
             temperature (float): Gas temperature in Kelvin.
-            metal_fraction (float): Total metallicity of the particles (for 'ploeckinger' tables).
+            metal_fraction (float): Total metallicity of the particles (for 'ploeckinger' and 'chimes' tables).
             ion (str): Name of the ion (e.g., 'H I').
 
         Returns:
@@ -215,6 +415,24 @@ class IonTables:
             ((table_z, table_LogTs, table_LognHs, table_LogZs), table) = self.ReadIonizationTable(ion=ion)
             # We divide by the Solar metallicity since the tables are in log10(Z/Zsol)
             Zsol       = 0.013371374
+            Z          = metal_fraction/Zsol
+            # The tables treat zero as log10(1e-50)
+            TInterpol  = np.log10(temperature)
+            Tinterpol  = self.SetLimitRange(TInterpol,table_LogTs.min(),table_LogTs.max())
+            nHInterpol = np.log10(nH_density)
+            nHInterpol  = self.SetLimitRange(nHInterpol,table_LognHs.min(),table_LognHs.max())
+            zInterpol  = redshift
+            Zinterpol  = np.log10(Z)
+#            Zinterpol[Zinterpol==-34.00] = -50.00
+            Zinterpol  = self.SetLimitRange(Zinterpol,table_LogZs.min(),table_LogZs.max())
+            pts        = np.column_stack((zInterpol, TInterpol, Zinterpol, nHInterpol))
+            result     = interpolate.interpn((table_z, table_LogTs, table_LogZs, table_LognHs), table, pts, method='linear', bounds_error=False, fill_value=None)
+            return result
+
+        if iontable_info["table_type"] == 'chimes':
+            ((table_z, table_LogTs, table_LognHs, table_LogZs), table) = self.ReadIonizationTable(ion=ion)
+            # We divide by the Solar metallicity since the tables are in log10(Z/Zsol)
+            Zsol       = 0.0129
             Z          = metal_fraction/Zsol
             # The tables treat zero as log10(1e-50)
             TInterpol  = np.log10(temperature)

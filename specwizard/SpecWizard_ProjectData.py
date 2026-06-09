@@ -72,9 +72,8 @@ class SightLineProjection:
             
         
         '''
-
-        Minitial      = self.ToCGS(header,header['MassTable']['GasMass'])
-        Mgas          = self.ToCGS(header,Mgas)
+        Minitial      = (self.to_physical(header['MassTable']['GasMass']).in_cgs()).value
+        Mgas          = (self.to_physical(Mgas).in_cgs()).value
         Primordial_H  = 0.76
         Primordial_DH = 2.547E-5 
         
@@ -216,20 +215,20 @@ class SightLineProjection:
         redshift         = header["Cosmo"]["Redshift"] + np.zeros_like(temperature)
         for element in elementnames:
             if element == 'Deuterium':
-                massfraction   =  hydrogenfraction * self.CalculateHDI(header, hydrogenfraction, particles["Masses"].value())
+                massfraction   =  hydrogenfraction * self.CalculateHDI(header, hydrogenfraction, particles["Masses"])
             else:    
                 massfraction   = (self.to_physical(particles["Abundances"][element]).in_cgs()).value
-            ParticleAbundances[element] = {}
-            ParticleAbundances[element]["massfraction"] = massfraction  # fraction of this element by mass
-            ParticleAbundances[element]["element mass"] = \
-                self.specparams["elementparams"][element]["Mass"] * constants["amu"] # mass of element [g]
+                ParticleAbundances[element] = {}
+                ParticleAbundances[element]["massfraction"] = massfraction  # fraction of this element by mass
+                ParticleAbundances[element]["element mass"] = \
+                    self.specparams["elementparams"][element]["Mass"] * constants["amu"] # mass of element [g]
 
         # determine ion fractions
         ComputedIonFractions = {}
         for (element, ion) in ions:
             
             if ion == 'D I':
-                ComputedIonFractions[ion] = self.CalculateHDI(header, hydrogenfraction, particles["Masses"].value())# n_ion/n_element
+                ComputedIonFractions[ion] = self.CalculateHDI(header, hydrogenfraction, particles["Masses"])# n_ion/n_element
             else:
                 LogIonfraction = ionizationbalance.IonAbundance(redshift, 
                                     nH_density=nH_cgs, temperature=temperature,metal_fraction=Z, ion=ion)

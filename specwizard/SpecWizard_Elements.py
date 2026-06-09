@@ -78,9 +78,11 @@ class Elements:
                 element_chsym = atomfile[element].attrs["Symbol"]
                 if element_chsym == 'D':
                     weight       = getattr(mendeleev,'H').atomic_weight
+                    nstates  = getattr(mendeleev,'H').electrons
+    
                 else:
                     weight       = getattr(mendeleev,element_chsym).atomic_weight
-                nstates  = getattr(mendeleev,element_chsym).electrons
+                    nstates  = getattr(mendeleev,element_chsym).electrons
                 states   = {}
                 for ion in element_ions:
                     name  = ion

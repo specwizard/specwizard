@@ -18,7 +18,8 @@ constants = ReadPhys()
 class SightLineProjection:
     
     ''' Interpolate particle properties to a sight line, using SPH kernel interpolation '''
-    def __init__(self, specparams, kernelprojection="Bspline",pixkms=1):
+    def __init__(self, specparams, kernelprojection="Bspline",pixkms=1, verbose=False):
+        self.verbose           = verbose
         self.specparams        = specparams
         self.kernelprojection = specparams["extra_parameters"]['Kernel']
         self.pixkms           = specparams["extra_parameters"]['pixkms']
@@ -42,7 +43,7 @@ class SightLineProjection:
         #set pixel size
         self.specparams["pixkms"] = self.pixkms 
 
-        self.inputfunc          = InputFunctions(fileparams=specparams, header=specparams['Header'])
+        self.inputfunc          = InputFunctions(fileparams=specparams, header=specparams['Header'], verbose=self.verbose)
     def Info(self):
         #
         print("This class interpolates particle data to a sightline")

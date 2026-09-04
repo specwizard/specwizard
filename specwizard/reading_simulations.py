@@ -16,7 +16,7 @@ constants = ReadPhys()
 
 class InputFunctions:
     
-    def __init__(self,fileparams={},header=None):
+    def __init__(self,fileparams={},header=None, verbose=False):
         """"
         This class containes a set of functions that are commonly shared among the different classes that read the data from simulations.
         
@@ -27,7 +27,7 @@ class InputFunctions:
         The Wizard dictionary created by SpecWizard_BuildInput
         """ 
         
-    
+        self.verbose    = verbose
         self.fileparams = fileparams
         self.fdir       = fileparams["snapshot_params"]["directory"]
         self.fname      = self.fdir + '/' + fileparams["snapshot_params"]["file"]
@@ -419,7 +419,8 @@ class InputFunctions:
                 info    = unit
                 abundances[elementname] = {'Value':values, 'Info': unit}
         except:
-            print("Element fraction not found using primordial quantities...")
+            if self.verbose:
+                print("Variable 'Element fraction' not found. I will be using primordial quantities, setting X = {0:1.3f}".format(1-constants['Y']))
             hydrogen    = np.zeros_like(particles['Densities']['Value']) + 1. - constants['Y']
             abundances['Hydrogen'] = {'Value':hydrogen, 'Info':unit}
             helium      = np.zeros_like(particles['Densities']['Value']) + constants['Y']
@@ -429,7 +430,8 @@ class InputFunctions:
         try: 
             metallicity  = read_variable(varname = groupname + '/' + groupdic['Metallicities'])
         except:
-            print("Warning! Metallicities not found. Setting them to zero.")
+            if self.verbose:
+                print("Variable 'Metallicities' not found. Setting metallicities to zero.")
             metallicity = np.zeros_like(particles['Densities']['Value'])
             unit        = self.set_unit(vardescription = 'mass fraction of metals', 
                                        Lunit=1.0, aFact=0, hFact=0)
@@ -548,7 +550,8 @@ class InputFunctions:
             SFR    = read_variable(varname = groupname + '/' + groupdic['StarFormationRate'])
             particlesSFR['StarFormationRate'] = SFR
         except:
-            print('Warning! Not able to read Star formation Rate properties...setting SFR to zero!')
+            if self.verbose:
+                print("'Variable 'Star formation Rate' not found. Setting the SFR to zero.")
             SFR         = np.zeros_like(particles['Masses']['Value']) 
             unit        = self.set_unit(vardescription = 'Star Formation Rate', 
                            Lunit=1.0, aFact=0, hFact=0)
@@ -653,7 +656,7 @@ class InputFunctions:
 class ReadEagle:
 
     
-    def __init__(self,fileparams={}):
+    def __init__(self,fileparams={}, verbose=False):
         
         """
         Class that contains functions to read particle data from the eagle simulation. It uses the python port of ReadEagle:
@@ -666,6 +669,7 @@ class ReadEagle:
         fileparams : dictionary
         The Wizard dictionary, output from SpecWizard_BuildInput
         """
+        self.verbose    = verbose
         self.fileparams = fileparams
         self.fdir       = fileparams["snapshot_params"]["directory"]
         self.fname      = self.fdir + '/' + fileparams["snapshot_params"]["file"]
@@ -891,7 +895,8 @@ class ReadSwift:
     """
     
     
-    def __init__(self,fileparams={}):
+    def __init__(self,fileparams={}, verbose=False):
+        self.verbose    = verbose
         self.fileparams = fileparams
         self.fdir       = fileparams["snapshot_params"]["directory"]
         self.fname      = self.fdir + '/' + fileparams["snapshot_params"]["file"]
@@ -1028,6 +1033,12 @@ class ReadSwift:
             self.los_mask = np.where((mask_x) & (mask_y) & (mask_z))[0]
 
             
+        # print("Reading the following variables: ")
+        # for var in ['Densities', 'SmoothingLengths', 'Masses', 'Positions', 'Velocities', 'Temperatures']:
+        #     print(var, groupdic[var])
+        #     d = self.read_variable(varname = groupname + '/' + groupdic[var])
+        #     print('variable is read')
+                                   
             
         particles = {'Densities'        : self.read_variable(varname = groupname + '/' + groupdic['Densities']),
                      'SmoothingLengths' : self.read_variable(varname = groupname + '/' + groupdic['SmoothingLengths']),
@@ -1037,9 +1048,11 @@ class ReadSwift:
                      'Temperatures'     : self.read_variable(varname = groupname + '/' + groupdic['Temperatures']),
                      'Elements'         : None, 
                      'Abundances'       : None  }
-            
-        elements,abundances,metallicity    = self.inputfunc.set_fractions_metallicity(self.read_variable,particles)    
-        
+
+ 
+        elements,abundances,metallicity    = self.inputfunc.set_fractions_metallicity(self.read_variable,particles)
+
+        #
         particles['Elements']   = elements
         particles['Abundances'] = abundances
         particles['Metallicities'] = metallicity
@@ -1047,7 +1060,8 @@ class ReadSwift:
         
         FWHM = 0.362
         particles['SmoothingLengths']["Value"] /= FWHM
-        print("We divide Swift's smoothing length by {0:1.3f} to convert from FWHM to extent of finite support".format(FWHM))
+        if self.verbose:
+            print("We divide Swift's smoothing length by {0:1.3f} to convert from FWHM to extent of finite support".format(FWHM))
         if (self.simtype == 'swift' and self.readIonFrac):
             field_name= self.fileparams['extra_parameters']['ReadIonFrac']['HI']
             ionfrac = self.read_variable(varname = groupname + '/' + field_name)
@@ -1129,29 +1143,38 @@ class ReadSwift:
             
             info_s  = self.inputfunc.read_group(groupname = groupname)
 
+        success = False
         if self.snaptype =='snapshot':
             
             varname_frmtd = varname.split("/")
             
             swiftsimio_format = self.swiftswimio_format(varname = varname_frmtd[1]) 
 
-            if varname_frmtd[1] == self.groupdic['ElementAbundance']:
-                element_format = self.swiftswimio_format(varname = varname_frmtd[2])
-                values = (getattr(getattr(self.SW_snap.gas,swiftsimio_format),element_format).value)[self.los_mask]
-                info_s   = self.inputfunc.read_group(groupname = varname_frmtd[0]+'/'+varname_frmtd[1])
-
-            elif varname_frmtd[1] == self.groupdic['IonFractions']:
-                ion_format = varname_frmtd[2]
-                try:
-                    values = (getattr(getattr(self.SW_snap.gas,swiftsimio_format),ion_format).value)[self.los_mask]
-                    info_s   = self.inputfunc.read_group(groupname = varname_frmtd[0]+'/'+varname_frmtd[1])            
-
-                except: 
-                    values = (getattr(getattr(self.SW_snap.gas,'reduced_species_fractions'),ion_format).value)[self.los_mask]
-                    info_s   = self.inputfunc.read_group(groupname = varname_frmtd[0]+'/ReducedSpeciesFractions')            
-
-            else:
+            try:
+                if varname_frmtd[1] == self.groupdic['ElementAbundance']:
+                    success   = True
+                    element_format = self.swiftswimio_format(varname = varname_frmtd[2])
+                    values = (getattr(getattr(self.SW_snap.gas,swiftsimio_format),element_format).value)[self.los_mask]
+                    info_s   = self.inputfunc.read_group(groupname = varname_frmtd[0]+'/'+varname_frmtd[1])
+                    
+            except:
+                pass
                 
+            try:
+                if varname_frmtd[1] == self.groupdic['IonFractions']:
+                    success   = True
+                    ion_format = varname_frmtd[2]
+                    try:
+                        values = (getattr(getattr(self.SW_snap.gas,swiftsimio_format),ion_format).value)[self.los_mask]
+                        info_s   = self.inputfunc.read_group(groupname = varname_frmtd[0]+'/'+varname_frmtd[1])            
+                    except: 
+                        values = (getattr(getattr(self.SW_snap.gas,'reduced_species_fractions'),ion_format).value)[self.los_mask]
+                        info_s   = self.inputfunc.read_group(groupname = varname_frmtd[0]+'/ReducedSpeciesFractions')
+            except:
+                pass
+                
+
+            if not success:
                 values = (getattr(self.SW_snap.gas,swiftsimio_format).value)[self.los_mask]
                 info_s   = self.inputfunc.read_group(groupname = varname)
                 
@@ -1193,7 +1216,8 @@ class ReadHydrangea:
 
     """
     
-    def __init__(self,fileparams={}):
+    def __init__(self,fileparams={}, verbose=False):
+        self.verbose    = verbose
         self.fileparams = fileparams
         self.fdir       = fileparams["snapshot_params"]["directory"]
         self.fname      = self.fdir + '/' + fileparams["snapshot_params"]["file"]

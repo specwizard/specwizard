@@ -20,9 +20,10 @@ class Build_Input:
     If the checks are successful the input parameter will be formatted into the dictionary 'specparams'
     this dictionary will be use in the rest of the program.
     """
-    def __init__(self):
+    def __init__(self, verbose=False):
 
-        self.sym_types  = ['eagle','swift','hydrangea','colibre','illustries']
+        self.verbose    = verbose
+        self.sym_types  = ['eagle','swift','hydrangea','colibre','illustries', 'swift_qlya']
         self.snap_types = ["snapshot","los"]
 
         self.specparams = {}
@@ -182,7 +183,8 @@ class Build_Input:
             # Set default values for missing parameters
             for dkey in default_keys:
                 if sightline[dkey] is None:
-                    print("Warning! " + dkey + " NOT found. Setting default value: " + str(sightline_default[dkey]))
+                    if self.verbose:
+                        print("Warning! " + dkey + " NOT found. Setting default value: " + str(sightline_default[dkey]))
                     sightline[dkey] = sightline_default[dkey]
 
         # Check if the simulation type is 'los'
@@ -494,7 +496,8 @@ class Build_Input:
         # Check if using periodic boundary conditions and calculating a LOS shorter than the box-size
         if (self.specparams['file_type']['snap_type'] == 'snapshot') and (extra_params['periodic'] is True) and (
                 sightline['ProjectionLength'] < 1):
-            print("Warning! You are calculating a LOS shorter than the box-size \n and using periodic boundary conditions")
+            if self.verbose:
+                print("Warning! You are calculating a LOS shorter than the box-size \n and using periodic boundary conditions")
 
     def check_for_directory(self, path):
         """

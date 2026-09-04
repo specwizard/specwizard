@@ -35,13 +35,14 @@ class ReadData:
         Hubble (function): Hubble parameter based on input configuration.
     """
     
-    def __init__(self, wizard=wizard):
+    def __init__(self, wizard=wizard, verbose=False):
         """
         Initialize the ReadData class with a specified `wizard` dictionary.
 
         Args:
             wizard (dict): Dictionary of simulation parameters for reading data. 
         """
+        self.verbose = verbose
         self.wizard = wizard
         self.fdir = wizard["snapshot_params"]["directory"]
         self.fname = self.fdir + '/' + wizard["snapshot_params"]["file"]
@@ -55,7 +56,7 @@ class ReadData:
         self.groupname = groupname    
         self.wizard['short-LOS'] = False
         self.header = self.read_header()
-        inputfunc = InputFunctions(fileparams=self.wizard, header=self.header)
+        inputfunc = InputFunctions(fileparams=self.wizard, header=self.header, verbose=self.verbose)
         self.ToCGS = inputfunc.ToCGS
         self.Hubble = inputfunc.Hubble
         self.to_unyt = inputfunc.set_particle_data_to_unyt
@@ -74,19 +75,19 @@ class ReadData:
         """
         simtype = self.simtype
         if simtype == "eagle":            
-            eagle = ReadEagle(self.wizard)
+            eagle = ReadEagle(self.wizard, verbose=self.verbose)
             header = eagle.read_header()
  
-        elif simtype in ["swift", "colibre"]:
-            swift = ReadSwift(self.wizard)
+        elif simtype in ["swift", "swift_qlya", "colibre"]:
+            swift = ReadSwift(self.wizard, verbose=self.verbose)
             header = swift.read_header()
 
         elif simtype == "illustris":
-            illustris = ReadIllustris(self.wizard)
+            illustris = ReadIllustris(self.wizard, verbose=self.verbose)
             header = illustris.read_header()
 
         elif simtype == "hydrangea":
-            hydrangea = ReadHydrangea(self.wizard)
+            hydrangea = ReadHydrangea(self.wizard, verbose=self.verbose)
             header = hydrangea.read_header()
 
         else:
@@ -113,7 +114,7 @@ class ReadData:
             eagle = ReadEagle(self.wizard)
             particles, sightline = eagle.read_particles()
  
-        elif simtype in ["swift", "colibre"]:
+        elif simtype in ["swift", "swift_qlya", "colibre"]:
             swift = ReadSwift(self.wizard)
             particles, sightline = swift.read_particles()
 

@@ -100,6 +100,29 @@ def get_simkeys(sim_name='eagle'):
                 'z-position': 'Ypos',
                 'Number_of_part_this_los': 'NumParts'
             },
+        },
+        'swift_qlya': {
+            'Header': {'Redshift': ['Cosmology', 'Redshift']},
+            'los': {
+                'elementnames': elementnames_swift,
+                'groupname': 'LOS_{:04d}',
+                'ElementAbundance': 'ElementMassFractions',
+                'Densities': 'Densities',
+                'SmoothingLengths': 'SmoothingLengths',
+                'Masses': 'Masses',
+                'Positions': 'Coordinates',
+                'Velocities': 'Velocities',
+                'Temperatures': 'Temperatures',
+                'Metallicities': 'MetalMassFractions',
+                'StarFormationRate': 'StarFormationRates',
+                'x-axis': 'Xaxis',
+                'y-axis': 'Yaxis',
+                'z-axis': 'Zaxis',
+                'x-position': 'Xpos',
+                'y-position': 'Ypos',
+                'z-position': 'Ypos',
+                'Number_of_part_this_los': 'NumParts'
+            },
             'snapshot': {
                 'elementnames': elementnames_swift,
                 'groupname': 'PartType0',

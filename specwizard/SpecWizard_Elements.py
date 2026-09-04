@@ -3,6 +3,8 @@ fontsize     = 20
 import numpy as np
 import re
 import mendeleev
+from mendeleev import isotope
+
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 import h5py 
@@ -19,14 +21,15 @@ class Elements:
     """
     
     def __init__(self, 
-                 atomfile="atom_dat.hdf5"):
+                 atomfile="atom_dat.hdf5", verbose=False):
         """
         Initialize the Elements class with a file containing element and ion parameters.
         
         Args:
             atomfile (str, optional): Path to the HDF5 file with atomic data for elements.
                 Defaults to 'atom_dat.hdf5'.
-        """       
+        """
+        self.verbose = verbose
         # file containing physical parameters of ions and elements
         self.atomdat       = atomfile
 
@@ -77,7 +80,9 @@ class Elements:
                 element_ions = atomfile[element].keys()
                 element_chsym = atomfile[element].attrs["Symbol"]
                 if element_chsym == 'D':
-                    weight       = getattr(mendeleev,'H').atomic_weight
+                    D        = isotope("H", 2)
+                    weight   = D.mass
+#                    weight       = getattr(mendeleev,'H').atomic_weight
                     nstates  = getattr(mendeleev,'H').electrons
     
                 else:
@@ -94,7 +99,12 @@ class Elements:
                 print('Element not included in the atomfile')
 
             parameters[element] = {'Weight':weight, 'Nstates':nstates, 'States':states}
-        atomfile.close()            
+        atomfile.close()
+
+        if self.verbose:
+            for element in elementnames:
+                print("Mass of {} in amu = {}".format(element, parameters[element]['Weight']))
+        
         return parameters                            
  
      

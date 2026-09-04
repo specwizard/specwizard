@@ -357,7 +357,7 @@ class Build_Input:
         self.specparams['ionparams'] = ion_properties
 
         # Set Ions and elements using Elements class
-        elements = Elements(atomfile=atomfile)
+        elements = Elements(atomfile=atomfile, verbose=self.verbose)
         transitionparams = {}
 
         # Set IonizationBalance using IonTables class

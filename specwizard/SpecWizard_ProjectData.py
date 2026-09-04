@@ -68,19 +68,18 @@ class SightLineProjection:
         elif 1/ratio <= 2.0:
             print("Warning! the pixel size is {:0.1f} times smaller than the smallest smoothing lenght.Probably you are overshooting with the pixel size".format(ratio))
 
-    def CalculateHDI(self,header,Hfrac,Mgas):
-        ''' We use the procedure showed in F. van de Voort et all 2012 (eq 2) for the calculation of deuterium abundance (D/H)
-            
-        
+    def CalculateHDI(self, header, Mgas):
+        ''' 
+        We use the procedure of https://ui.adsabs.harvard.edu/abs/2018MNRAS.477...80V/abstract (their eq 2) for the calculation of deuterium abundance by mass
         '''
-        Minitial      = (self.to_physical(header['MassTable']['GasMass']).in_cgs()).value
-        Mgas          = (self.to_physical(Mgas).in_cgs()).value
-        Primordial_H  = 0.76
-        Primordial_DH = 2.547E-5 
         
-        DAbund        = (Minitial/Mgas) * (Primordial_H/Hfrac) * Primordial_DH
+        Minitial      = (self.to_physical(header['MassTable']['GasMass']).in_cgs()).value # initial particle mass
+        Mgas          = (self.to_physical(Mgas).in_cgs()).value                           # current particle mass
+        Primordial_D  = constants['X_D']                                                  # Planck (Primordial) Deuterium mass fraction (ie rho_deuterium / rho_baryon)
         
-        return np.zeros_like(DAbund) + Primordial_DH
+        DAbund        = (Minitial/Mgas) * Primordial_D # mass fraction of Deuterium in this particle
+        
+        return DAbund
     
     def ProjectData(self, sightlinedata,ReadIonfrac=False):
         ''' Interpolate particle properties to a sight line'''
@@ -214,9 +213,9 @@ class SightLineProjection:
         #Redshift has no units so no .in_cgs() conversion               
         Z                = (self.to_physical(particles['Metallicities'])).value
         redshift         = header["Cosmo"]["Redshift"] + np.zeros_like(temperature)
-        for element in elementnames:
+        for element in elementnames: # compute the abundance (by mass) of each element
             if element == 'Deuterium':
-                massfraction   =  hydrogenfraction * self.CalculateHDI(header, hydrogenfraction, particles["Masses"])
+                massfraction   =  self.CalculateHDI(header, particles["Masses"])
             else:    
                 massfraction   = (self.to_physical(particles["Abundances"][element]).in_cgs()).value
             ParticleAbundances[element] = {}
@@ -228,12 +227,15 @@ class SightLineProjection:
         ComputedIonFractions = {}
         for (element, ion) in ions:
             
-            if ion == 'D I':
-                ComputedIonFractions[ion] = self.CalculateHDI(header, hydrogenfraction, particles["Masses"])# n_ion/n_element
-            else:
+            if ion != 'D I':
                 LogIonfraction = ionizationbalance.IonAbundance(redshift, 
                                     nH_density=nH_cgs, temperature=temperature,metal_fraction=Z, ion=ion)
                 ComputedIonFractions[ion] = 10.**LogIonfraction # n_ion/n_element
+                
+        # DI/D equals HI/H, ie, neutral deuterium / total deuterium exactly equals neutral hydrogen / hydrogen
+        for (element, ion) in ions:
+            if ion == 'D I':
+                ComputedIonFractions[ion] = ComputedIonFractions['H I']
         
         try:
             SimulationIonFraction = {}

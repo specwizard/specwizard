@@ -55,7 +55,7 @@ def ReadPhys():
     time_cgs   = unyt.s
     velocity_cgs = length_cgs/time_cgs
     mass_cgs     = unyt.g
-    dimmensionless = unyt.dimensionless
+    dimensionless = unyt.dimensionless
     energy_cgs   = mass_cgs * (velocity_cgs)**2
     temperature_cgs = unyt.K
 
@@ -65,7 +65,8 @@ def ReadPhys():
         "mH": 1.672621898e-24*mass_cgs,
         "me": 9.10938356e-28*mass_cgs,
         "amu": 1.66053904e-24*mass_cgs,
-        "Y": 0.248*dimmensionless,
+        "Y": 0.248*dimensionless, # helium primordial abundance by mass (Planck value)
+        "X_D": 3.7e-5*dimensionless, # deuterium primordial abundance by mass (Planck value)
         "planck": 6.62607004e-27 * energy_cgs*time_cgs,
         "kB": 1.38064852e-16 * energy_cgs/temperature_cgs,
         "sigma": 6.63e-18 * energy_cgs * length_cgs**-2 * time_cgs**-1 * temperature_cgs**-4,
@@ -85,17 +86,17 @@ def ReadPhys():
         "Ryd": 2.1798723253902544e-11*energy_cgs,
         "ElementSolarMassFractions": {
             "info": "From Wiersma et al. 2009",
-            "H": 0.7065*dimmensionless,
-            "He": 0.2806*dimmensionless,
-            "C": 2.07e-3*dimmensionless,
-            "N": 8.36e-4*dimmensionless,
-            "O": 5.49e-3*dimmensionless,
-            "Ne": 1.41e-3*dimmensionless,
-            "Mg": 5.91e-4*dimmensionless,
-            "Si": 6.83e-4*dimmensionless,
-            "S": 4.09e-4*dimmensionless,
-            "Ca": 6.44e-5*dimmensionless,
-            "Fe": 1.10e-3*dimmensionless,
+            "H": 0.7065*dimensionless,
+            "He": 0.2806*dimensionless,
+            "C": 2.07e-3*dimensionless,
+            "N": 8.36e-4*dimensionless,
+            "O": 5.49e-3*dimensionless,
+            "Ne": 1.41e-3*dimensionless,
+            "Mg": 5.91e-4*dimensionless,
+            "Si": 6.83e-4*dimensionless,
+            "S": 4.09e-4*dimensionless,
+            "Ca": 6.44e-5*dimensionless,
+            "Fe": 1.10e-3*dimensionless,
         },
     }
     return phys_dic

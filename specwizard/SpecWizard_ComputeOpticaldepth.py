@@ -256,6 +256,7 @@ class ComputeOpticaldepth:
             weight  = self.transitions[ion_name]["Mass"] * self.constants["amu"]
             lambda0 = self.transitions[ion_name]["lambda0"]
             f_value = self.transitions[ion_name]["f-value"]
+            # print("Wrap: ", element_name, weight, lambda0, f_value)
             
             if lambda0 > 0:
                 # Convert properties to CGS units

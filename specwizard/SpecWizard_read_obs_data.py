@@ -8,9 +8,16 @@ class read_obs_data():
     '''
     This class reads the data from observational data from Kim et al 2020 and Vid Iršič et al 2017
     '''
-    def __init__(self, datapath='./data/'):
+    def __init__(self, datapath='./specwizard/data/', verbose=False):
         #
+        self.verbose  = verbose
         self.datapath = datapath
+        self.data     = ['Kim2020_data', 'Day19.cv', 'Becker2014.csv', 'Walther18.csv', 'VidIrsic2017_data']
+        if self.verbose:
+            print(" -- read_obs_data: extracting data from directory {}".format(datapath))
+            print(" -- read_obs_data: available data sets are : ")
+            for d in self.data:
+                print("   ", d)        
         
     def kim2020(self,filename='kim2020_data',plot=False):
         kim2020_hdf5 = h5py.File(self.datapath+filename+".hdf5",'r')

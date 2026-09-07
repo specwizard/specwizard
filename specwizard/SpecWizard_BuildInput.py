@@ -370,7 +370,7 @@ class Build_Input:
 
         # Set transitionparams for each specified ion
         for element, ion in ions:
-            pars = elements.ElementParameters(ElementNames=[element])
+            pars = elements.ElementParameters(ElementNames=[element], verbose=self.verbose)
             transitionparams[ion] = {}
             transitionparams[ion]["Mass"] = pars[element]["Weight"]
 

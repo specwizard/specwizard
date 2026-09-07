@@ -43,7 +43,7 @@ class Elements:
         print("This class sets the physical parameters for the desired chemical elements that are needed\
         to be able to compute the properties of its absorption lines")
         
-    def ElementParameters(self, ElementNames=ElementNames):
+    def ElementParameters(self, ElementNames=ElementNames, verbose=False):
         """ 
         Retrieve parameters for all specified elements from the atom data file.
         
@@ -101,9 +101,9 @@ class Elements:
             parameters[element] = {'Weight':weight, 'Nstates':nstates, 'States':states}
         atomfile.close()
 
-        if self.verbose:
+        if verbose:
             for element in elementnames:
-                print("Mass of {} in amu = {}".format(element, parameters[element]['Weight']))
+                print(" -- ElementParameters from Mendeleev: Mass of {} in amu = {}".format(element, parameters[element]['Weight']))
         
         return parameters                            
  

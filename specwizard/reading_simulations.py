@@ -757,6 +757,9 @@ class ReadEagle:
 
         Header = {'BoxSize':box, 'Cosmo' : cosmo, 'NumPartTot':numpart, 'MassTable':MassTable}
 
+        if self.verbose:
+            print(" -- ReadEagle: Simulation parameters: box = {0:2.4f}, z = {1:1.2f}, particle masses are: gas = {2:1.3e}, dm = {3:1.2e}".format((box['Value'][0]).to('Mpc'), header['Redshift'], Gasmass['Value'].to('Msun'), DMmass['Value'].to('Msun')))
+        
         return Header
 
     def read_particles(self):

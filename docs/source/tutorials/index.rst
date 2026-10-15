@@ -13,3 +13,4 @@ configuration file at your own data.
    short_spectra
    atomic_data
    lyman_limit
+   Deuterium-Example

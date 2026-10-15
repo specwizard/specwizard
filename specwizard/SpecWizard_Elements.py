@@ -52,7 +52,8 @@ class Elements:
                 Each element name should correspond to an entry in the atom data file.
         
         Returns:
-            dict: A dictionary containing element properties in the form:
+            dict: A dictionary containing element properties in the form::
+
                 {
                     'Name': str,                # Name of the element (e.g., 'Hydrogen')
                     'atomic_weight': float,     # Atomic weight in atomic mass units (amu)

@@ -1,3 +1,6 @@
+  .. image:: https://readthedocs.org/projects/specwizard/badge/?version=latest
+     :target: https://specwizard.readthedocs.io/en/latest/
+     :alt: Documentation Status
 Overview
 ========
 .. INTRO_FLAG

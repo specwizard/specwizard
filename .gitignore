@@ -1,14 +1,23 @@
+# Python / packaging
 /dist/
-*~
-/docs/build/
-/Examples/
+/build/
 /*.egg-info
 /.eggs
-.pypirc
-.pypirc~checkgit 
-/__pycache__/
-**/__pycache__/
-*.ipynb
-*.yml
+__pycache__/
+.pypirc*
+
+# Editors
+*~
+.ipynb_checkpoints/
+
+# Documentation build output
+/docs/_build/
+/docs/build/
+/docs/source/api/generated/
+
+# Local data and outputs (simulation data never goes in git).
+# Note: *.ipynb and *.yml are intentionally NOT ignored any more, the
+# tutorials and their configuration files live in docs/source/tutorials/.
 *.hdf5
 *.pdf
+/Examples/

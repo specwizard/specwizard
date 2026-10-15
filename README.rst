@@ -19,6 +19,8 @@ Citing SPECWIZARD
 
 If you use SPECWIZARD in scientific work, please cite the relevant code/paper for your release.
 
+.. TODO: add the ADS link / BibTeX for the SPECWIZARD paper here.
+
 
 Installation Notes
 ==================
@@ -42,6 +44,8 @@ The code is constantly updated. Feedback and bug reports are welcome through ema
 
 Quick Start
 ===========
+
+.. QUICKSTART_FLAG
 
 Most users follow this flow:
 
@@ -202,8 +206,12 @@ Then run:
         long_data = io_read.read_fullspectrum_from_file()
 
 
+.. QUICKSTART_FLAG_END
+
+.. OUTPUT_FLAG
+
 Data Fields: What You Can Read
-================================
+==============================
 
 This project writes structured HDF5 groups for both short and long spectra. Below are the common fields and where to find them.
 
@@ -231,3 +239,4 @@ Output And File Layout
 - Full long-spectrum files are stored under ``FullSpectrum/...``.
 - ``OpticalDepth_IO.ReadVariable(path)`` can be used to load a specific dataset with metadata.
 
+.. OUTPUT_FLAG_END

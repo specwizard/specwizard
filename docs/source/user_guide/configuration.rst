@@ -1,20 +1,27 @@
-.. _example_page:
+.. _configuration:
 
-Guide for BuildInput
-=================
-In order to use ``specwizard`` we need to indicate the program the specifics  of the calculation we want to perform.
-This is done by using ``specwizard.BuildInput``. This class creates the ``Wizard`` python dictionary the is used in all the following steps to calculate spectra.
-The class contains a set of functions that create this dictionary, however the easiest way to deal with the input is to feed in a `yml` file and read it with `BuildInput.read_from_yml()`.
+======================
+The configuration file
+======================
+
+To use ``specwizard`` we need to tell the program the specifics of the calculation we want to perform.
+This is done with :class:`specwizard.Build_Input`, which creates the ``Wizard`` Python dictionary that is used in all the following steps to calculate spectra.
+The class has a set of methods that build this dictionary one section at a time, but the easiest way is to write a YAML file and read it with :meth:`~specwizard.Build_Input.read_from_yml`:
+
+.. code-block:: python
+
+   import specwizard
+   wizard = specwizard.Build_Input().read_from_yml("Wizard.yml")
 
 In the different examples of usage of ``specwizard`` you will always find the ``yml`` file that produces the output. 
 Here we will explain the different elements that are mandatory or optional in the configuration file. 
 
-------------
+-------------
 ``file_type``
-------------
+-------------
 
 
-.. code:: YAML
+.. code-block:: yaml
 
     file_type:
         
@@ -35,13 +42,13 @@ Here we will explain the different elements that are mandatory or optional in th
 - ``snapshot`` This is the simulation file that contains all the particles from the simulation volume ``specwizard`` will construct a sightline by applying a spatial mask to the particles of the simulation. 
 - ``LOS`` This file contains already sightlines pre-made from the simulation output. This method is way faster.
 
----------------------
-``snapshot_paramas`` 
----------------------
+--------------------
+``snapshot_params``
+--------------------
 
-this consist of `directory` which is the path that host the simulation data and ``file`` is the name of the .hdf5 file. `specwizard` will perform a check for the existence of both the file and the directory, 
+This consists of ``directory``, the path that hosts the simulation data, and ``file``, the name of the ``.hdf5`` file. ``specwizard`` checks that both the directory and the file exist.
 
-.. code:: YAML
+.. code-block:: yaml
 
     snapshot_params:
         
@@ -57,7 +64,7 @@ This section contain all the information that is needed to set-up the sightline.
 Example:
 
 
- .. code:: YAML
+.. code-block:: yaml
 
         sightline:
             ProjectionAxes: ['simx','simy','simz']
@@ -70,7 +77,7 @@ Example:
             nsight: 0
 
 
-``ProjectionAxes``: Creates the correspondence between the simulation axis and the axis of the spectra line. For example, for ``ProjectionAxes=['simz','simy','simz']``, the sight line will - in the coordinates of the simulation, be along the :math:`x-axis`, and go through the point with :math:`(z,y)`.
+``ProjectionAxes``: Creates the correspondence between the simulation axis and the axis of the spectra line. For example, for ``ProjectionAxes=['simz','simy','simx']``, the sight line will - in the coordinates of the simulation, be along the :math:`x-axis`, and go through the point with :math:`(z,y)`.
 
 ``ProjectionStart``: are the starting positions for each coordinate as a fraction of the box size, e.g ``x-position = 0.5`` corresponds to half of the boxsize. 
 
@@ -89,11 +96,11 @@ In case of using a LOS file. The only necessary parameter is ``nsight``. Which w
 Here we set all the parameters related with the elements and ions that are going to be taken into account for the Spectra. If needed the ionization fraction will be calculated through the interpolation of the ionization table given by ``table_type``.
 Example:
 
- .. code:: YAML
+.. code-block:: yaml
 
         ionparams:
             table_type: specwizard_cloudy
-            iondir: /cosma/home/dp004/dc-aram1/workdir7/pyspecwizard_main/spwtables/HM12/
+            iondir: /path/to/ion_tables/HM12/
             fname: null
             ions: [['Hydrogen', 'H I'],['Helium','He II'],['Carbon','C III'],['Carbon','C IV'],['Oxygen','O VI'],['Silicon','Si IV']]
             SFR_properties:
@@ -105,9 +112,9 @@ Example:
 
 ``table_type``:  Name of the ionizations tables to use to calculate the ion fractions. Current options:
 
-    - ```'specwizard_cloudy'```:  Corresponds to the Cloudy tables created from the Cloudy notebook based in `Haardt & Madau 2012 <https://ui.adsabs.harvard.edu/abs/2012ApJ...746..125H/abstract>`_.
-    -  ```'ploeckinger'```: Correspond to the tables described in  `Ploeckinger & Schaye 2020 <https://ui.adsabs.harvard.edu/abs/2020MNRAS.497.4857P/abstract>`_ .
-    -  ```'chimes'```: Correspond to the tables described in  `Ploeckinger & Richings 2025 <https://ui.adsabs.harvard.edu/abs/2025MNRAS.543..891P/abstract>`_ .
+    - ``'specwizard_cloudy'``:  Corresponds to the Cloudy tables created from the Cloudy notebook based in `Haardt & Madau 2012 <https://ui.adsabs.harvard.edu/abs/2012ApJ...746..125H/abstract>`_.
+    -  ``'ploeckinger'``: Correspond to the tables described in  `Ploeckinger & Schaye 2020 <https://ui.adsabs.harvard.edu/abs/2020MNRAS.497.4857P/abstract>`_ .
+    -  ``'chimes'``: Correspond to the tables described in  `Ploeckinger & Richings 2025 <https://ui.adsabs.harvard.edu/abs/2025MNRAS.543..891P/abstract>`_ .
 
 ``iondir``: Path for the ionization table.
 
@@ -121,14 +128,14 @@ Example:
  - If ``ignore_particle = False`` we will set the Temperature of SFR by the value indicated in ``'Temperature [K]'``. 
 
 
--------------
+------------
 ``ODParams``
--------------
+------------
 Here we establish optional parameters to turn on or off effects in the calculation of the optical depth:
 
 Example:
 
- .. code:: YAML
+.. code-block:: yaml
 
         ODParams:
             VelOffset_kms: 0
@@ -151,7 +158,7 @@ Example:
 This field sets all the necessary parameters to construct a longspectra. Thus is only necessary if you want to compute a LongSpectra. 
 
 
- .. code:: YAML
+.. code-block:: yaml
 
         LongSpectra:
             lambda_min: 300.0
@@ -160,7 +167,7 @@ This field sets all the necessary parameters to construct a longspectra. Thus is
             z_qsr: 3.2
             delta_z: 0.1
             all_contaminants: True
-            file_dir: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/los/ #./Analisis/long_los/ #s
+            file_dir: /path/to/los/files/
 
 ``lambda_min``: Minimal wavelength in Ångströms that will be detected by the "spectrometer".
 
@@ -174,4 +181,54 @@ This field sets all the necessary parameters to construct a longspectra. Thus is
 
 ``all_contaminants``: If ``True`` will add all the ions available that contribute to the wavelength range. 
 
-``file_dir``: Directory that has all the lines of sight files to construct the longspectra. 
+``file_dir``: Directory that has all the lines of sight files to construct the longspectra.
+
+
+---------------
+``extraparams``
+---------------
+
+Optional parameters for more advanced use. If the section is omitted the defaults below are used.
+
+.. code-block:: yaml
+
+        extraparams:
+            periodic: true
+            pixkms: 1
+            ReadIonFrac:
+                ReadIonFrac: false
+                ReadHydrogen: true
+                HI: NeutralHydrogenAbundance
+                ReadHelium: false
+                He: ""
+                fname_urchin: ""
+
+``periodic``: Turn on/off periodic boundary conditions.
+
+``pixkms``: Pixel size of the spectrum in km/s.
+
+``ReadIonFrac``: Read ion fractions directly from the simulation output (e.g. the
+neutral hydrogen abundance computed on the fly, or from an Urchin file given by
+``fname_urchin``) instead of interpolating them from the ionization tables.
+
+----------
+``Output``
+----------
+
+Where :class:`specwizard.OpticalDepth_IO` writes its HDF5 file. Required only if
+you save spectra; see :doc:`output_format`.
+
+.. code-block:: yaml
+
+        Output:
+            directory: ./outputs/
+            fname: shortspec.hdf5
+
+-----------------
+Complete example
+-----------------
+
+The configuration used in the :doc:`../tutorials/short_spectra` tutorial:
+
+.. literalinclude:: ../tutorials/configs/eagle_snapshot.yml
+   :language: yaml

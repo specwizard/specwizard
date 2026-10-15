@@ -1,15 +1,14 @@
-# Yalm Ain't Markup Language
-# Paramter file for specwizard
-
+# Wizard.yml -- example SPECWIZARD configuration (EAGLE snapshot).
+# Replace the /path/to/... entries with the locations on your system.
+# See the "Configuration file" page of the docs for every option.
 
 file_type:
-    
     sim_type: eagle
     snap_type: snapshot
-    
+
 snapshot_params:
-    
-    directory: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/snapshot_019_z001p004
+    # On COSMA: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/snapshot_019_z001p004
+    directory: /path/to/snapshot_019_z001p004
     file: snap_019_z001p004.0.hdf5
 
 sightline:
@@ -21,24 +20,23 @@ sightline:
         extend: False
         extendfactor: 3
     nsight: 0
-    
+
 ionparams:
     table_type: specwizard_cloudy
-    iondir: /cosma/home/dp004/dc-aram1/workdir7/pyspecwizard_main/spwtables/HM12/
+    iondir: /path/to/ion_tables/HM12/
     fname: null
     ions: [['Hydrogen', 'H I'],['Helium','He II'],['Carbon','C III'],['Carbon','C IV'],['Oxygen','O VI'],['Silicon','Si IV']]
     SFR_properties:
         modify_particle: True
         ignore_particle: False
-        Temperature [K]: 1.0E+4    # Putting the plus sign between E and the number is important to not be processed as a string. 
-    atomfile: /cosma7/data/dp004/dc-aram1/specwizard/specwizard/atom_info.hdf5
-    
+        Temperature [K]: 1.0E+4    # Keep the "+" in the exponent, otherwise YAML reads it as a string.
+    atomfile: /path/to/atomic_info.hdf5
+
 ODParams:
     VelOffset_kms: 0
     PecVelEffectsOff: False
     ThermalEffectsOff: False
     VoigtOff: True
-    
 
 LongSpectra:
     lambda_min: 300.0
@@ -47,9 +45,5 @@ LongSpectra:
     z_qsr: 3.2
     delta_z: 0.1
     all_contaminants: True
-    #file_dir: ./eagle_los/
-    file_dir: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/los/ #./Analisis/long_los/ #s
-    
-
-
-    
+    # On COSMA: /cosma7/data/Eagle/ScienceRuns/Planck1/L0100N1504/PE/REFERENCE/data/los/
+    file_dir: /path/to/los/

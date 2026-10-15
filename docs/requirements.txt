@@ -1,0 +1,14 @@
+# Requirements for building the documentation (also used by Read the Docs).
+sphinx>=7.2
+sphinx-rtd-theme>=2.0
+myst-nb>=1.0
+sphinx-design>=0.5
+sphinx-copybutton>=0.5
+# Light runtime deps needed so autodoc can import the package;
+# the heavy simulation readers are mocked in conf.py.
+numpy
+scipy
+unyt
+h5py
+matplotlib
+pyyaml

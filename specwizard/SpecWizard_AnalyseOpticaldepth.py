@@ -498,16 +498,18 @@ class Analyse_Opticaldepth:
         return ynew
 
     def Noise(self,spectrum, SNR=100, seed=-1, Poisson=True):
-        ''' generate Gaussian noise 
-        Input:
-           spectrum: spectrum dictionary
-           SNR: value of the signal-to-noise at the continuum level
-           seed: random seed
-                seed<=0: randomly initialize random number generator
-                seed>0: set seed
-          Poisson: if True, generate Poisson-distributed noise with zero mean and this SNR
-                   if False, generate Gaussian-distributed noise with zero mean and this SNR
-        Output: for each entry in flux, return the corresponding value of the noise
+        '''Generate noise for a spectrum.
+
+        Args:
+            spectrum: spectrum dictionary.
+            SNR: value of the signal-to-noise at the continuum level.
+            seed: random seed. If ``seed <= 0`` the random number generator is
+                initialised randomly, otherwise it is set to ``seed``.
+            Poisson: if True, generate Poisson-distributed noise with zero mean and
+                this SNR; if False, generate Gaussian-distributed noise.
+
+        Returns:
+            For each entry in flux, the corresponding value of the noise.
         '''
         if seed <=0:
             np.random.seed(None)

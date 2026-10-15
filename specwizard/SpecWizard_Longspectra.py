@@ -152,15 +152,16 @@ class LongSpectra:
     
     
     def Rebin(self,spectrum, wavelong,waveshort):
-        ''' rebin the function y(x) to the new bins xnew
-         Interpolation is performed such that the mean of the function is conserved
-         Input: 
-           -spectrum: dictionary, containing
-              -L:       linear extent of the wavelength range
-              -wave:    wavelength or Hubble velocity
-              -flux:    flux
-           -wave:       new wavelength or Hubble velocity to rebin to 
-           '''
+        '''Rebin the function y(x) to the new bins xnew.
+
+        Interpolation is performed such that the mean of the function is conserved.
+
+        Args:
+            spectrum: dictionary containing ``L`` (linear extent of the wavelength
+                range), ``wave`` (wavelength or Hubble velocity) and ``flux``.
+            wavelong: new wavelength or Hubble velocity to rebin to.
+            waveshort: original wavelength or Hubble velocity grid.
+        '''
         # determine pixel size
         L    = waveshort.max() #spectrum["L"]
         npix = len(spectrum) #spectrum["npix"]

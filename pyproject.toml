@@ -8,9 +8,9 @@ version = "0.9.1.1"
 authors = [
     { name="Andres Aramburo-Garcia", email="aramburo@lorentz.leidenuniv.nl" },{name = "Tom Theuns", email = "tom.theuns@durham.ac.uk"},
 ]
-description="."
+description = "Mock quasar absorption spectra from cosmological simulations"
 readme = "README.rst"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -22,7 +22,6 @@ dependencies = [
     "swiftsimio",
     "mendeleev",
     "roman",
-    "swiftsimio",
     "pyread_eagle",
     "matplotlib",
     "hydrangea",
@@ -31,12 +30,27 @@ dependencies = [
     "h5py",
     "requests",
     "html5lib",
-    "astropy"
+    "astropy",
+    "unyt",
+]
+
+[project.optional-dependencies]
+docs = [
+    "sphinx>=7.2",
+    "sphinx-rtd-theme>=2.0",
+    "myst-nb>=1.0",
+    "sphinx-design>=0.5",
+    "sphinx-copybutton>=0.5",
 ]
 
 [project.urls]
+"Documentation" = "https://specwizard.readthedocs.io"
 "Homepage" = "https://github.com/specwizard/specwizard"
 "Bug Tracker" = "https://github.com/specwizard/specwizard/issues"
 
 [tool.setuptools.packages.find]
 exclude = ["docs*", "Examples*"]
+
+# Ship the non-Python data files (EinsteinA.dat, observational CSVs) in the wheel.
+[tool.setuptools.package-data]
+specwizard = ["*.dat", "data/*.csv"]

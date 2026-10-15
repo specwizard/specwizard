@@ -280,15 +280,16 @@ class Lines:
             return result    #
         
     def SciPyVoigt(self, b_kms=10., v0_kms=0.0, lambda0_AA=1215.67, f_value=0.4164, naturalwidth_kms=6.06076e-3, periodic=True):
-        ''' 
-        return Voigt line-profile function, Equation 5
-        this version uses the SciPy implementation of the Voigt function
-        input:
-             b_kms (float):     b-parameter [km/s]
-             v0_kms (float):    velocity at line centre [km/s]
-        output: 
-             line profile (float or array) : line shape with unit column density [s/cm]
-        
+        '''Return the Voigt line-profile function (Equation 5 of the paper).
+
+        This version uses the SciPy implementation of the Voigt function.
+
+        Args:
+            b_kms (float): b-parameter [km/s].
+            v0_kms (float): velocity at line centre [km/s].
+
+        Returns:
+            float or array: line shape with unit column density [s/cm].
         '''
         # extend velocity array
         velocity_kms = np.concatenate((self.v_kms - self.box_kms, self.v_kms, self.v_kms + self.box_kms))

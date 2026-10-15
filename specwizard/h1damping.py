@@ -86,10 +86,9 @@ class HIDamping:
     
         
     def Config(self, n=1, l=1):
-        '''
-              configuration states are tuples of the form (n,l), where:
-          n = principle quantum number, n=1->nmax
-          l = angular momentum number, l=0->n-1
+        '''Configuration states are tuples of the form ``(n, l)``, where ``n`` is
+        the principal quantum number (1 to nmax) and ``l`` the angular momentum
+        number (0 to n-1).
         '''
         return (n,l)
         
